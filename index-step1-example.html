@@ -1,0 +1,92 @@
+<!doctype html>
+<div class="row" style="margin-top:10px">
+<button id="startBtn">Start</button>
+<button id="stopBtn" disabled>Stop</button>
+<button id="clearBtn">Clear</button>
+</div>
+</div>
+
+
+<div class="panel"><h3>Live Player</h3><audio id="player" controls preload="metadata"></audio></div>
+<div class="panel"><h3>Chunks</h3><div id="chunkList" class="list"></div></div>
+<div class="panel"><h3>Log</h3><textarea id="log" class="log" readonly></textarea></div>
+
+
+<script>
+(function(){
+function $(id){ return document.getElementById(id); }
+var logEl = $('log');
+function log(){
+var parts = [];
+for (var i=0;i<arguments.length;i++){ var a = arguments[i]; parts.push(typeof a==='string'?a:JSON.stringify(a)); }
+
+var line = new Date().toISOString()+'  '+parts.join(' ');
+logEl.value += '\n' + line;
+logEl.scrollTop = logEl.scrollHeight;
+console.log('[diag]', line);
+
+
+var timesliceInput = $('timeslice');
+var startBtn = $('startBtn');
+var stopBtn = $('stopBtn');
+var clearBtn = $('clearBtn');
+var player = $('player');
+var list = $('chunkList');
+
+
+var mediaStream=null, recorder=null, chunkIndex=0; var currentMime=null;
+
+
+function chooseMime(){
+var c=['audio/webm;codecs=opus','audio/webm','audio/ogg;codecs=opus','audio/ogg'];
+if (window.MediaRecorder && MediaRecorder.isTypeSupported){
+for (var i=0;i<c.length;i++){ try{ if (MediaRecorder.isTypeSupported(c[i])) return c[i]; }catch(e){} }
+}
+return '';
+}
+
+
+function pad3(n){ n=String(n); while(n.length<3) n='0'+n; return n; }
+
+
+function renderChunk(blob, idx){
+var row=document.createElement('div'); row.className='chunk';
+var localUrl=URL.createObjectURL(blob);
+var meta=document.createElement('div'); meta.innerHTML='<strong>seg-'+pad3(idx)+'</strong> ('+(blob.type||'audio')+')';
+var actions=document.createElement('div');
+var btn=document.createElement('button'); btn.textContent='Play Local'; btn.onclick=function(){ player.src=localUrl; player.play().catch(function(){}); };
+actions.appendChild(btn); row.appendChild(meta); row.appendChild(actions); list.appendChild(row);
+}
+
+
+function start(){
+if (recorder) return; log('Start clicked');
+navigator.mediaDevices.getUserMedia({ audio:true }).then(function(stream){
+mediaStream=stream; currentMime=chooseMime(); var opts=currentMime?{mimeType:currentMime}:{ };
+recorder=new MediaRecorder(stream, opts);
+recorder.addEventListener('dataavailable', function(ev){ if(ev.data && ev.data.size>0){ var idx=++chunkIndex; log('Got chunk', idx, ev.data.type, ev.data.size+'B'); renderChunk(ev.data, idx); } });
+recorder.addEventListener('stop', function(){ log('Recorder stopped'); startBtn.disabled=false; stopBtn.disabled=true; if(mediaStream){ mediaStream.getTracks().forEach(function(t){t.stop();}); mediaStream=null; } });
+var slice=Math.max(200, Number(timesliceInput.value)||5000); recorder.start(slice);
+startBtn.disabled=true; stopBtn.disabled=false; log('Recording started (slice='+slice+'ms mime='+(currentMime||'(auto)')+')');
+}).catch(function(err){ log('getUserMedia error:', err && (err.message||String(err))); });
+}
+
+
+function stop(){ if(recorder){ recorder.stop(); } }
+function clear(){ list.innerHTML=''; log('Cleared'); player.removeAttribute('src'); player.load(); }
+
+
+if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ log('ERROR: getUserMedia not supported in this browser/context.'); }
+if (!window.MediaRecorder){ log('ERROR: MediaRecorder not supported in this browser/context.'); }
+
+
+startBtn.addEventListener('click', start);
+stopBtn.addEventListener('click', stop);
+clearBtn.addEventListener('click', clear);
+
+
+log('UI bound. Click Start and accept the mic prompt.');
+})();
+</script>
+</body>
+</html>

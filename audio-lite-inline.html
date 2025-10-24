@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>audio-lite inline (per-chunk recorder)</title>
+  <style>
+    :root { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; }
+    body { margin: 24px; }
+    .row { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+    button { padding:8px 12px; border-radius:8px; border:1px solid #ccc; background:#fff; cursor:pointer; }
+    button:disabled { opacity:.6; cursor:not-allowed; }
+    .panel { border:1px solid #e5e7eb; border-radius:12px; padding:16px; margin:16px 0; }
+    .list { display:flex; flex-direction:column; gap:8px; }
+    .chunk { border:1px dashed #d1d5db; border-radius:10px; padding:10px; display:flex; gap:12px; align-items:center; justify-content:space-between; }
+    .log { width:100%; height:140px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    audio { width:260px; }
+  </style>
+</head>
+<body>
+  <h1>audio-lite <span style="font-size:12px; padding:2px 8px; border-radius:999px; background:#eef2ff; color:#3730a3;">per-chunk recorder</span></h1>
+
+  <div class="panel">
+    <div class="row">
+      <label>Chunk length (ms):
+        <input id="timeslice" type="number" value="5000" min="500" step="500" />
+      </label>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button id="startBtn">Start</button>
+      <button id="stopBtn" disabled>Stop</button>
+      <button id="clearBtn">Clear</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>Live Player (shared)</h3>
+    <audio id="player" controls preload="metadata"></audio>
+  </div>
+
+  <div class="panel">
+    <h3>Chunks</h3>
+    <div id="chunkList" class="list"></div>
+  </div>
+
+  <div class="panel">
+    <h3>Log</h3>
+    <textarea id="log" class="log" readonly></textarea>
+  </div>
+
+  <script>
+  (function(){
+    // ---------- helpers ----------
+    function $(id){ return document.getElementById(id); }
+    var logEl = $('log');
+    function log(){ 
+      var parts=[]; for (var i=0;i<arguments.length;i++){ try{parts.push(typeof arguments[i]==='string'?arguments[i]:JSON.stringify(arguments[i]));}catch(_){parts.push(String(arguments[i]));} }
+      var line = new Date().toISOString() + '  ' + parts.join(' ');
+      logEl.value += '\n' + line; logEl.scrollTop = logEl.scrollHeight;
+      if (console && console.log) console.log('[diag]', line);
+    }
+    function pad3(n){ n=String(n); while(n.length<3) n='0'+n; return n; }
+
+    // ---------- UI refs ----------
+    var timesliceInput = $('timeslice');
+    var startBtn = $('startBtn');
+    var stopBtn  = $('stopBtn');
+    var clearBtn = $('clearBtn');
+    var player   = $('player');
+    var list     = $('chunkList');
+
+    // ---------- state ----------
+    var mediaStream = null;        // shared stream (one permission prompt)
+    var chunkIndex  = 0;
+    var running     = false;
+    var chunkTimer  = null;
+
+    // Prefer Ogg/Opus if available, then WebM/Opus.
+    function chooseMime(){
+      var c = ['audio/ogg;codecs=opus','audio/ogg','audio/webm;codecs=opus','audio/webm'];
+      if (window.MediaRecorder && MediaRecorder.isTypeSupported){
+        for (var i=0; i<c.length; i++){ try{ if (MediaRecorder.isTypeSupported(c[i])) return c[i]; }catch(e){} }
+      }
+      return ''; // let browser pick
+    }
+
+    function renderChunk(blob, idx){
+      var row = document.createElement('div');
+      row.className = 'chunk';
+
+      var localUrl = URL.createObjectURL(blob);
+
+      var meta = document.createElement('div');
+      meta.textContent = 'seg-' + pad3(idx) + ' (' + (blob.type || 'audio') + ')';
+
+      var actions = document.createElement('div');
+
+      var audioEl = document.createElement('audio');
+      audioEl.controls = true;
+      audioEl.preload  = 'metadata';
+      audioEl.src      = localUrl;
+      audioEl.addEventListener('loadedmetadata', function(){
+        log('seg-' + pad3(idx) + ' loadedmetadata duration=' + (audioEl.duration || 0));
+      });
+      audioEl.addEventListener('error', function(){
+        var err = audioEl.error ? (audioEl.error.message || audioEl.error.code) : 'unknown';
+        log('seg-' + pad3(idx) + ' AUDIO ERROR', err);
+      });
+
+      var playBtn = document.createElement('button');
+      playBtn.textContent = 'Play Local';
+      playBtn.onclick = function(){
+        player.pause(); player.removeAttribute('src'); player.srcObject = null;
+        player.src = localUrl; player.load(); player.currentTime = 0;
+        player.play().catch(function(e){ log('shared player play() failed', e && e.message ? e.message : e); });
+      };
+
+      actions.appendChild(audioEl);
+      actions.appendChild(playBtn);
+
+      row.appendChild(meta);
+      row.appendChild(actions);
+      list.appendChild(row);
+    }
+
+    // Create a COMPLETE chunk by spinning up a fresh MediaRecorder for just this slice.
+    function recordOneChunk(stream, ms, mime, onBlob){
+      var opts = mime ? { mimeType: mime } : {};
+      var rec;
+      try { rec = new MediaRecorder(stream, opts); }
+      catch(e){ log('MediaRecorder ctor failed:', e && e.message ? e.message : e); throw e; }
+
+      var gotData = false;
+      rec.ondataavailable = function(ev){
+        if (ev.data && ev.data.size > 0){
+          gotData = true;
+          // Re-blob to pin the type; Chrome sometimes returns generic 'application/octet-stream'
+          var typed = new Blob([ev.data], { type: (mime || ev.data.type || 'audio/webm') });
+          onBlob(typed);
+        }
+      };
+      rec.onstop = function(){
+        if (!gotData){
+          log('WARN: recorder stopped without data; increasing chunk length may help');
+        }
+      };
+      rec.start();                         // no timeslice
+      setTimeout(function(){ try { rec.stop(); } catch(_){} }, ms);
+    }
+
+    function start(){
+      if (running) return;
+      log('Start clicked');
+      var SLICE_MS = Math.max(1000, Number(timesliceInput.value) || 5000);
+      navigator.mediaDevices.getUserMedia({ audio:true }).then(function(stream){
+        mediaStream = stream;
+        running = true; startBtn.disabled = true; stopBtn.disabled = false;
+
+        var mime = chooseMime();
+        log('Recording started (per-chunk; chunk=' + SLICE_MS + 'ms; mime=' + (mime || '(auto)') + ')');
+
+        var loop = function(){
+          if (!running) return;
+          var idx = ++chunkIndex;
+          recordOneChunk(mediaStream, SLICE_MS, mime, function(blob){
+            log('Got chunk', idx, (blob.type||'audio/*'), (blob.size||0) + 'B');
+            renderChunk(blob, idx);
+            // schedule next chunk AFTER we received this one
+            if (running) { chunkTimer = setTimeout(loop, 0); }
+          });
+        };
+        loop();
+      }).catch(function(err){
+        log('getUserMedia error:', err && (err.message || String(err)));
+      });
+    }
+
+    function stop(){
+      if (!running) return;
+      running = false;
+      if (chunkTimer){ clearTimeout(chunkTimer); chunkTimer = null; }
+      if (mediaStream){ mediaStream.getTracks().forEach(function(t){ t.stop(); }); mediaStream = null; }
+      startBtn.disabled = false; stopBtn.disabled = true;
+      log('Stopped');
+    }
+
+    function clearList(){
+      list.innerHTML = '';
+      player.removeAttribute('src'); player.load();
+      log('Cleared');
+    }
+
+    // support checks
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ log('ERROR: getUserMedia not supported'); }
+    if (!window.MediaRecorder){ log('ERROR: MediaRecorder not supported'); }
+
+    // wire UI
+    startBtn.addEventListener('click', start);
+    stopBtn .addEventListener('click', stop);
+    clearBtn.addEventListener('click', clearList);
+
+    log('UI bound. Click Start and accept the mic prompt.');
+  })();
+  </script>
+</body>
+</html>
+
