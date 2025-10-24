@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Step 2 – Per-Chunk Recorder + Centered Waveform Bars</title>
+  <style>
+    :root { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; color:#0f172a; }
+    body { margin: 24px; background:#fff; }
+    .row { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+    button { padding:8px 12px; border-radius:8px; border:1px solid #cbd5e1; background:#fff; cursor:pointer; }
+    button:disabled { opacity:.6; cursor:not-allowed; }
+    .panel { border:1px solid #e5e7eb; border-radius:12px; padding:16px; margin:16px 0; background:#fff; }
+    .list { display:flex; flex-direction:column; gap:16px; }
+    .chunk { border:1px solid #e5e7eb; border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:10px; background:#ffffff; }
+    .top { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .meta { font-size:12px; color:#475569; }
+    .waveShell { position:relative; border-radius:16px; overflow:hidden; background:#e6edf6; border:1px solid #e5e7eb; padding:10px 12px; }
+    .waveHead { display:flex; align-items:center; justify-content:space-between; color:#64748b; font-size:14px; margin:2px 2px 8px 2px; }
+    .waveCanvas { width:100%; height:96px; display:block; }
+    audio { width:280px; }
+    .log { width:100%; height:140px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .dot { width:10px; height:10px; border-radius:50%; background:#f59e0b; margin-left:8px; box-shadow:0 0 10px currentColor; }
+  </style>
+</head>
+<body>
+  <h1 style="display:flex;align-items:center;gap:8px;">Step 2 – Audio Bars per Chunk <span class="dot" title="mic status"></span></h1>
+
+  <div class="panel">
+    <div class="row">
+      <label>Chunk length (ms):
+        <input id="timeslice" type="number" value="5000" min="500" step="500" />
+      </label>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button id="startBtn">Start</button>
+      <button id="stopBtn" disabled>Stop</button>
+      <button id="clearBtn">Clear</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>Live Player (shared)</h3>
+    <audio id="player" controls preload="metadata"></audio>
+  </div>
+
+  <div class="panel">
+    <h3>Chunks</h3>
+    <div id="chunkList" class="list"></div>
+  </div>
+
+  <div class="panel">
+    <h3>Log</h3>
+    <textarea id="log" class="log" readonly></textarea>
+  </div>
+
+  <script>
+  (function(){
+    // ---------- helpers ----------
+    function $(id){ return document.getElementById(id); }
+    var logEl = $('log');
+    function log(){
+      var parts=[]; for (var i=0;i<arguments.length;i++){ try{parts.push(typeof arguments[i]==='string'?arguments[i]:JSON.stringify(arguments[i]));}catch(_){parts.push(String(arguments[i]));} }
+      var line = new Date().toISOString() + '  ' + parts.join(' ');
+      logEl.value += '\n' + line; logEl.scrollTop = logEl.scrollHeight;
+      if (console && console.log) console.log('[step2]', line);
+    }
+    function pad3(n){ n=String(n); while(n.length<3) n='0'+n; return n; }
+
+    // Use CSS pixel dims for drawing (avoids double-scaling issues)
+    function getCanvasSize(canvas){
+      const rect = canvas.getBoundingClientRect();
+      // ensure backing store matches CSS size exactly (no DPR scaling)
+      if (canvas.width !== Math.floor(rect.width) || canvas.height !== Math.floor(rect.height)){
+        canvas.width  = Math.floor(rect.width);
+        canvas.height = Math.floor(rect.height);
+      }
+      return { W: canvas.width, H: canvas.height };
+    }
+
+    // Fallback round-rect path if context.roundRect is missing
+    function drawRoundRect(ctx, x, y, w, h, r){
+      r = Math.min(r, w/2, h/2);
+      ctx.beginPath();
+      ctx.moveTo(x+r, y);
+      ctx.lineTo(x+w-r, y);
+      ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+      ctx.lineTo(x+w, y+h-r);
+      ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+      ctx.lineTo(x+r, y+h);
+      ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+      ctx.lineTo(x, y+r);
+      ctx.quadraticCurveTo(x, y, x+r, y);
+      ctx.closePath();
+    }
+
+    // ---------- UI refs ----------
+    var timesliceInput = $('timeslice');
+    var startBtn = $('startBtn');
+    var stopBtn  = $('stopBtn');
+    var clearBtn = $('clearBtn');
+    var player   = $('player');
+    var list     = $('chunkList');
+    var dot      = document.querySelector('.dot');
+
+    // ---------- state ----------
+    var mediaStream = null;
+    var running     = false;
+    var chunkIndex  = 0;
+    var chunkTimer  = null;
+    var preferredMime = null;
+
+    // Prefer Ogg/Opus if available, then WebM/Opus.
+    function chooseMime(){
+      var c = ['audio/ogg;codecs=opus','audio/ogg','audio/webm;codecs=opus','audio/webm'];
+      if (window.MediaRecorder && MediaRecorder.isTypeSupported){
+        for (var i=0; i<c.length; i++){ try{ if (MediaRecorder.isTypeSupported(c[i])) return c[i]; }catch(e){} }
+      }
+      return ''; // let browser pick
+    }
+
+    // ---------- waveform computation & drawing ----------
+    var decodeCtx = null; // for decodeAudioData
+
+    function computePeaksFromBuffer(buffer, barCount){
+      // mono: use channel 0
+      var data = buffer.getChannelData(0);
+      var total = data.length;
+      var samplesPerBar = Math.max(1, Math.floor(total / barCount));
+      var peaks = new Float32Array(barCount);
+
+      // RMS for smoother look
+      for (var i=0; i<barCount; i++){
+        var start = i * samplesPerBar;
+        var end   = Math.min(total, start + samplesPerBar);
+        var sum=0, cnt=0;
+        for (var j=start; j<end; j++){ var v=data[j]; sum += v*v; cnt++; }
+        var rms = Math.sqrt(sum / Math.max(1, cnt));
+        peaks[i] = rms;
+      }
+      // Normalize 0..1
+      var max = 0; for (var k=0;k<barCount;k++){ if (peaks[k] > max) max = peaks[k]; }
+      var scale = max > 0 ? (1 / max) : 1;
+      for (var m=0;m<barCount;m++){ peaks[m] *= scale; }
+      return peaks;
+    }
+
+    // *** Centered, mirrored renderer that uses CSS-pixel size ***
+    function drawBars(ctx, canvas, peaks, progressRatio){
+      const size = getCanvasSize(canvas);
+      const W = size.W, H = size.H;
+
+      ctx.clearRect(0,0,W,H);
+
+      // Rounded light background
+      ctx.fillStyle = '#e6edf6';
+      if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(0, 0, W, H, 14); ctx.fill(); }
+      else { drawRoundRect(ctx, 0, 0, W, H, 14); ctx.fill(); }
+
+      // Layout
+      const bars = peaks.length;
+      const padX = 12;                     // inner horizontal padding
+      const gap  = 1;                      // px between bars
+      const bw   = Math.max(2, Math.floor((W - padX*2) / bars) - gap);
+      const cy   = H / 2;                  // centerline
+      const maxH = H - 18;                 // leave air on top/bottom
+      const playedBars = Math.floor(Math.max(0, Math.min(1, progressRatio)) * bars);
+
+      function drawCenteredBar(i, color){
+        const amp = peaks[i];              // 0..1
+        const h   = Math.max(2, amp * maxH);
+        const y   = cy - (h / 2);
+        const x   = padX + i * (bw + gap);
+        ctx.fillStyle = color;
+        const ry = Math.min(4, h/2);
+        if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(x, y, bw, h, ry); ctx.fill(); }
+        else { drawRoundRect(ctx, x, y, bw, h, ry); ctx.fill(); }
+      }
+
+      // Draw blue portion first (played)
+      for (let i = 0; i < playedBars; i++) drawCenteredBar(i, '#60a5fa');
+      // Then gray remainder
+      for (let i = playedBars; i < bars; i++) drawCenteredBar(i, '#94a3b8');
+
+      // Subtle centerline
+      ctx.fillStyle = '#cbd5e133';
+      ctx.fillRect(padX, Math.floor(cy) - 0.5, W - padX*2, 1);
+    }
+
+    function renderWaveform(canvas, audioEl, blob){
+      // ensure backing store matches CSS size now and on resize
+      getCanvasSize(canvas);
+
+      if (!decodeCtx){
+        var AC = window.AudioContext || window.webkitAudioContext;
+        decodeCtx = new AC();
+      }
+      blob.arrayBuffer().then(function(ab){
+        return decodeCtx.decodeAudioData(ab);
+      }).then(function(buffer){
+        // number of bars ~ (canvas.width / desired bar+gap px) in CSS pixels
+        var desiredPxPerBar = 4;
+        var W = canvas.getBoundingClientRect().width;
+        var barCount = Math.max(60, Math.min(800, Math.floor(W / desiredPxPerBar)));
+        var peaks = computePeaksFromBuffer(buffer, barCount);
+        var ctx = canvas.getContext('2d');
+
+        function repaint(){
+          var ratio = (!audioEl.duration || !isFinite(audioEl.duration)) ? 0
+                    : Math.max(0, Math.min(1, audioEl.currentTime / audioEl.duration));
+          drawBars(ctx, canvas, peaks, ratio);
+        }
+        repaint();
+
+        // keep progress (blue) synced
+        audioEl.addEventListener('timeupdate', repaint);
+        audioEl.addEventListener('seeked', repaint);
+        audioEl.addEventListener('loadedmetadata', repaint);
+        audioEl.addEventListener('play', repaint);
+        audioEl.addEventListener('pause', repaint);
+
+        // click-to-seek
+        canvas.style.cursor = 'pointer';
+        canvas.title = 'Click to seek • Renders after file load';
+        canvas.onclick = function(ev){
+          var rect = canvas.getBoundingClientRect();
+          var x = ev.clientX - rect.left;
+          var ratio = Math.min(1, Math.max(0, x / rect.width));
+          if (!isNaN(audioEl.duration) && isFinite(audioEl.duration)){
+            audioEl.currentTime = ratio * audioEl.duration;
+            audioEl.play().catch(function(){});
+          }
+        };
+
+        // re-render on resize (recompute bars for new width)
+        window.addEventListener('resize', function(){
+          getCanvasSize(canvas);
+          var W2 = canvas.getBoundingClientRect().width;
+          var barCount2 = Math.max(60, Math.min(800, Math.floor(W2 / desiredPxPerBar)));
+          peaks = computePeaksFromBuffer(buffer, barCount2);
+          repaint();
+        });
+      }).catch(function(err){
+        console.warn('decode/waveform error', err);
+      });
+    }
+
+    // ---------- per-chunk UI ----------
+    function renderChunk(blob, idx){
+      var row = document.createElement('div');
+      row.className = 'chunk';
+
+      var top = document.createElement('div'); top.className = 'top';
+      var meta = document.createElement('div'); meta.className = 'meta';
+      meta.textContent = 'seg-' + pad3(idx) + ' (' + (blob.type || 'audio') + ')';
+
+      var audioEl = document.createElement('audio');
+      var localUrl = URL.createObjectURL(blob);
+      audioEl.controls = true; audioEl.preload = 'metadata'; audioEl.src = localUrl;
+      audioEl.addEventListener('loadedmetadata', function(){
+        log('seg-' + pad3(idx) + ' loadedmetadata duration=' + (audioEl.duration || 0));
+      });
+
+      var playShared = document.createElement('button');
+      playShared.textContent = 'Play in Shared';
+      playShared.onclick = function(){
+        player.pause(); player.removeAttribute('src'); player.srcObject = null;
+        player.src = localUrl; player.load(); player.currentTime = 0;
+        player.play().catch(function(e){ log('shared play() failed', e && e.message ? e.message : e); });
+      };
+
+      var right = document.createElement('div'); right.style.display='flex'; right.style.gap='8px';
+      right.appendChild(audioEl); right.appendChild(playShared);
+      top.appendChild(meta); top.appendChild(right);
+
+      var shell = document.createElement('div'); shell.className = 'waveShell';
+      var head  = document.createElement('div'); head.className = 'waveHead';
+      head.innerHTML = '<div><strong>Waveform Bars</strong></div><div>Click to seek • Renders after file load</div>';
+      var canvas = document.createElement('canvas'); canvas.className = 'waveCanvas';
+
+      shell.appendChild(head); shell.appendChild(canvas);
+
+      row.appendChild(top);
+      row.appendChild(shell);
+      list.appendChild(row);
+
+      renderWaveform(canvas, audioEl, blob);
+    }
+
+    // ---------- per-chunk recording (fresh recorder per slice) ----------
+    function recordOneChunk(stream, ms, mime, onBlob){
+      var opts = mime ? { mimeType: mime } : {};
+      var rec;
+      try { rec = new MediaRecorder(stream, opts); }
+      catch(e){ log('MediaRecorder ctor failed:', e && e.message ? e.message : e); throw e; }
+
+      var gotData = false;
+      rec.ondataavailable = function(ev){
+        if (ev.data && ev.data.size > 0){
+          gotData = true;
+          var typed = new Blob([ev.data], { type: (mime || ev.data.type || 'audio/webm') });
+          onBlob(typed);
+        }
+      };
+      rec.onstop = function(){
+        if (!gotData){ log('WARN: recorder stopped without data; increase chunk length?'); }
+      };
+      rec.start(); // no timeslice
+      setTimeout(function(){ try { rec.stop(); } catch(_){ /* ignore */ } }, ms);
+    }
+
+    // ---------- start/stop ----------
+    function start(){
+      if (running) return;
+      log('Start clicked');
+
+      var SLICE_MS = Math.max(1000, Number(timesliceInput.value) || 5000);
+
+      navigator.mediaDevices.getUserMedia({ audio:true }).then(function(stream){
+        mediaStream = stream;
+        dot.style.background = '#22c55e'; // green
+        running = true; startBtn.disabled = true; stopBtn.disabled = false;
+
+        preferredMime = chooseMime();
+        log('Recording started (per-chunk; chunk=' + SLICE_MS + 'ms; mime=' + (preferredMime || '(auto)') + ')');
+
+        var loop = function(){
+          if (!running) return;
+          var idx = ++chunkIndex;
+          recordOneChunk(mediaStream, SLICE_MS, preferredMime, function(blob){
+            log('Got chunk', idx, (blob.type||'audio/*'), (blob.size||0) + 'B');
+            renderChunk(blob, idx);
+            if (running) { chunkTimer = setTimeout(loop, 0); }
+          });
+        };
+        loop();
+      }).catch(function(err){
+        log('getUserMedia error:', err && (err.message || String(err)));
+        dot.style.background = '#ef4444'; // red
+      });
+    }
+
+    function stop(){
+      if (!running) return;
+      running = false;
+      if (chunkTimer){ clearTimeout(chunkTimer); chunkTimer = null; }
+      if (mediaStream){ mediaStream.getTracks().forEach(function(t){ t.stop(); }); mediaStream = null; }
+      dot.style.background = '#f59e0b'; // amber
+      startBtn.disabled = false; stopBtn.disabled = true;
+      log('Stopped');
+    }
+
+    function clearList(){
+      list.innerHTML = '';
+      player.removeAttribute('src'); player.load();
+      log('Cleared');
+    }
+
+    // support checks
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ log('ERROR: getUserMedia not supported'); }
+    if (!window.MediaRecorder){ log('ERROR: MediaRecorder not supported'); }
+
+    // wire UI
+    startBtn.addEventListener('click', start);
+    stopBtn .addEventListener('click', stop);
+    clearBtn.addEventListener('click', clearList);
+
+    log('UI ready: Click Start and accept mic. Each chunk gets a centered, mirrored waveform with click-to-seek.');
+  })();
+  </script>
+</body>
+</html>
+
