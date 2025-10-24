@@ -1,4 +1,4 @@
-Here’s what I’ll do next:
+![Screenshot of the working per-chunk recorder](images/demo-screenshot.png)
 
 ---
 
