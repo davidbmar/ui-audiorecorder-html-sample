@@ -1,4 +1,16 @@
+![Screenshot of the working per-chunk recorder](images/ui-waveform-chunked-indexdb.png)
+
+
 ![Screenshot of the working per-chunk recorder](images/demo-screenshot.png)
+---
+This is meant as a reference for UI / HMTL.
+
+### To Quickly get and idea clone the repo then
+1. To start just use python: - python3 -m http.server 8000
+2. In a web browser go to: ie http://localhost:8000/
+3. You will see several steps, as progressivly we incremet from step1, step2, step3 etc in incrementally build this UI.
+4. http://localhost:8000/step4-indexdb/
+
 
 ---
 
