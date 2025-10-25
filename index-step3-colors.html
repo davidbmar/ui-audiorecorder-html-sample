@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Audio Recorder — Step 2 (SAI Theme)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- ===== SAI-STYLE VANILLA CSS (no CDN) ===== -->
+  <style>
+    :root{
+      --bg-top:#0b1220;
+      --bg-bottom:#090d16;
+      --glass: rgba(255,255,255,0.08);
+      --glass-strong: rgba(255,255,255,0.12);
+      --stroke: rgba(255,255,255,0.12);
+      --text:#e6edf3;
+      --muted:#9aa6b2;
+      --accent:#35e0ff;      /* subtle neon-cyan accent */
+      --good:#3be38a;        /* success green */
+      --danger:#ff6b6b;
+      --shadow: 0 10px 30px rgba(0,0,0,0.35);
+      --radius-xl: 18px;
+      --radius-lg: 14px;
+      --radius-md: 12px;
+      --blur: blur(16px);
+    }
+    *{ box-sizing:border-box }
+    html,body{ height:100% }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      color:var(--text);
+      background: linear-gradient(to bottom, var(--bg-top), var(--bg-bottom)) fixed;
+    }
+    .app-shell{
+      min-height:100dvh;
+      display:grid;
+      place-items:center;
+      padding:56px 16px 120px;
+      position:relative;
+      overflow:hidden;
+    }
+    /* subtle vignette */
+    .app-shell::after{
+      content:"";
+      position:fixed; inset:-10%;
+      pointer-events:none;
+      background: radial-gradient(60% 40% at 50% 0%, rgba(255,255,255,0.06), transparent 60%);
+      filter: blur(40px);
+      opacity:.8;
+    }
+
+    /* Context ribbon */
+    .ribbon{
+      position:fixed; top:10px; left:50%; transform:translateX(-50%);
+      color:var(--muted); font-size:13px; letter-spacing:.02em;
+      backdrop-filter: var(--blur);
+      background: rgba(255,255,255,0.04);
+      border:1px solid var(--stroke);
+      border-radius: 999px;
+      padding:6px 10px;
+      box-shadow: var(--shadow);
+    }
+
+    /* Floating palette */
+    .palette{
+      position:fixed; top:54px; left:50%; transform:translateX(-50%);
+      width:min(92vw, 520px);
+      backdrop-filter: var(--blur);
+      background: var(--glass);
+      border:1px solid var(--stroke);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+      padding:14px;
+      display:none;
+    }
+    .palette.open{ display:block; animation:pop .16s ease-out }
+    @keyframes pop{ from{ opacity:0; transform:translateX(-50%) translateY(-6px) } to{ opacity:1; transform:translateX(-50%) translateY(0) } }
+    .row{ display:flex; gap:10px; align-items:center }
+    .icon-dot{
+      width:10px; height:10px; border-radius:999px; background: var(--accent);
+      box-shadow: 0 0 14px rgba(53,224,255,.8);
+    }
+    .palette input[type="text"]{
+      flex:1; border:none; outline:none; background:transparent; color:var(--text);
+      font-size:18px; padding:6px 2px;
+    }
+    .btn{
+      border:1px solid var(--stroke); background: rgba(255,255,255,0.06);
+      color:var(--text); padding:8px 12px; border-radius:999px; cursor:pointer;
+      transition: background .15s ease, transform .05s ease;
+    }
+    .btn:hover{ background: rgba(255,255,255,0.12) }
+    .btn:active{ transform: translateY(1px) }
+    .btn-accent{
+      border-color: rgba(53,224,255,.35);
+      background: linear-gradient(180deg, rgba(53,224,255,.18), rgba(53,224,255,.12));
+      color:#b8f4ff;
+    }
+
+    /* Recorder Card (wrap your bars/canvas here) */
+    .recorder-card{
+      width:min(92vw, 920px);
+      border:1px solid var(--stroke);
+      background: var(--glass);
+      backdrop-filter: var(--blur);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+      padding:18px 18px 22px;
+      transition: box-shadow .2s ease, outline-color .2s ease;
+      outline:1px solid transparent;
+    }
+    .recorder-card.active{
+      outline-color: rgba(53,224,255,.5);
+      box-shadow: 0 0 0 2px rgba(53,224,255,.25), var(--shadow);
+    }
+    .recorder-header{
+      display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px;
+    }
+    .title{ font-weight:600; letter-spacing:.2px }
+    .muted{ color:var(--muted); font-size:13px }
+    .bar-surface{
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,0.03);
+      border-radius: var(--radius-lg);
+      padding:14px;
+      min-height:140px;
+    }
+
+    /* Tool cards */
+    .tools{
+      display:flex; gap:12px; justify-content:center; margin-top:16px; flex-wrap:wrap;
+    }
+    .tool-card{
+      width:160px; padding:14px; text-align:center;
+      border:1px solid var(--stroke); border-radius: var(--radius-md);
+      background: rgba(255,255,255,0.06);
+      transition: transform .12s ease, background .15s ease;
+      cursor:pointer;
+    }
+    .tool-card:hover{ transform: translateY(-2px); background: rgba(255,255,255,0.12) }
+    .tool-name{ font-weight:600; margin-top:8px }
+    .tool-sub{ color:var(--muted); font-size:12px; margin-top:2px }
+
+    /* Confirmation sheet */
+    .confirm{
+      position:fixed; left:50%; transform:translateX(-50%);
+      bottom:-320px; width:min(92vw, 520px);
+      border-top-left-radius: var(--radius-xl);
+      border-top-right-radius: var(--radius-xl);
+      border:1px solid var(--stroke);
+      background: var(--glass-strong);
+      backdrop-filter: blur(20px);
+      box-shadow: var(--shadow);
+      padding:16px;
+      transition: bottom .22s ease;
+    }
+    .confirm.open{ bottom:10px }
+    .confirm .ok{ color:#b6f7d2 }
+    .kbd{
+      padding:2px 6px; border:1px solid var(--stroke); border-radius:6px; background: rgba(255,255,255,0.06);
+      font-size:12px; color:var(--muted)
+    }
+
+    /* Small helpers */
+    .row-wrap{ display:flex; gap:8px; flex-wrap:wrap }
+    .spacer{ flex:1 }
+    .hidden{ display:none !important }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+
+    <!-- Context ribbon -->
+    <div id="context-ribbon" class="ribbon">
+      In Browser › Audio Recorder › <span id="elapsed">00:00</span>
+      &nbsp;•&nbsp; <span class="kbd">⌘</span>/<span class="kbd">Ctrl</span>+<span class="kbd">K</span> to open palette
+    </div>
+
+    <!-- Floating command palette -->
+    <div id="palette" class="palette" aria-hidden="true">
+      <div class="row" style="margin-bottom:8px;">
+        <span class="icon-dot" aria-hidden="true"></span>
+        <input id="palette-input" type="text" placeholder="Ask: “Transcribe the latest recording and summarize…”" />
+        <button id="palette-start" class="btn btn-accent">🎙 Start</button>
+        <button id="palette-stop" class="btn">⏹ Stop</button>
+      </div>
+      <div class="row-wrap muted">
+        <span>Suggestions:</span>
+        <span class="kbd">Summarize</span>
+        <span class="kbd">Export SRT</span>
+        <span class="kbd">Timestamps</span>
+      </div>
+    </div>
+
+    <!-- Recorder card (wrap your existing bars/canvas inside .bar-surface) -->
+    <section id="recorder-card" class="recorder-card">
+      <div class="recorder-header">
+        <div>
+          <div class="title">Live Audio Bars</div>
+          <div class="muted">Sky-style glass panel, your existing bars remain here</div>
+        </div>
+        <div class="row">
+          <button id="btn-start" class="btn btn-accent">🎙 Start Recording</button>
+          <button id="btn-stop"  class="btn">⏹ Stop</button>
+        </div>
+      </div>
+
+      <!-- ⬇️ Place your existing BAR UI (canvas/SVG/divs) INSIDE this container ⬇️ -->
+      <div id="bars-surface" class="bar-surface">
+        <!-- Your existing bars markup/canvas goes here -->
+        <canvas id="barsCanvas" width="880" height="120"></canvas>
+      </div>
+      <!-- ⬆️ Keep your current drawing code; we only changed the container styles ⬆️ -->
+
+      <!-- Tool cards -->
+      <div class="tools">
+        <div class="tool-card" data-tool="summarize">
+          <div style="font-size:22px;">📝</div>
+          <div class="tool-name">Summarize</div>
+          <div class="tool-sub">Quick action</div>
+        </div>
+        <div class="tool-card" data-tool="timestamps">
+          <div style="font-size:22px;">⏱</div>
+          <div class="tool-name">Timestamp View</div>
+          <div class="tool-sub">Segments</div>
+        </div>
+        <div class="tool-card" data-tool="srt">
+          <div style="font-size:22px;">📄</div>
+          <div class="tool-name">Export to SRT</div>
+          <div class="tool-sub">Subtitle file</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Confirmation sheet -->
+    <section id="confirm" class="confirm" aria-hidden="true">
+      <div class="row" style="margin-bottom:8px;">
+        <div class="ok">✅ Transcription Complete</div>
+        <div class="spacer"></div>
+        <button id="confirm-close" class="btn">Close</button>
+      </div>
+      <div class="muted" id="confirm-details">–</div>
+      <div class="row" style="margin-top:12px;">
+        <button class="btn btn-accent" id="view-transcript">View Transcript</button>
+        <button class="btn" id="rerun">Re-run</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- ===== Minimal JS wiring for UI states (non-destructive) ===== -->
+  <script>
+    (function(){
+      const palette   = document.getElementById('palette');
+      const ribbonEl  = document.getElementById('context-ribbon');
+      const card      = document.getElementById('recorder-card');
+      const btnStart  = document.getElementById('btn-start');
+      const btnStop   = document.getElementById('btn-stop');
+      const palStart  = document.getElementById('palette-start');
+      const palStop   = document.getElementById('palette-stop');
+      const confirmEl = document.getElementById('confirm');
+      const confirmDetails = document.getElementById('confirm-details');
+      const confirmClose = document.getElementById('confirm-close');
+      const elapsedEl = document.getElementById('elapsed');
+
+      let startedAt = null;
+      let chunks = 0;
+      let timerId = null;
+
+      // Hotkey: Cmd/Ctrl + K toggles the floating palette
+      window.addEventListener('keydown', (e)=>{
+        const mod = e.ctrlKey || e.metaKey;
+        if(mod && (e.key.toLowerCase() === 'k')){
+          e.preventDefault();
+          togglePalette();
+        }
+      });
+
+      function togglePalette(force){
+        const open = force ?? !palette.classList.contains('open');
+        palette.classList.toggle('open', open);
+        if(open) document.getElementById('palette-input')?.focus();
+      }
+
+      function fmt(t){
+        t = Math.max(0, Math.floor(t));
+        const m = String(Math.floor(t/60)).padStart(2,'0');
+        const s = String(t%60).padStart(2,'0');
+        return `${m}:${s}`;
+      }
+
+      function tick(){
+        if(!startedAt) return;
+        const secs = (Date.now()-startedAt)/1000|0;
+        elapsedEl.textContent = fmt(secs);
+      }
+
+      function startUI(){
+        // visual state
+        card.classList.add('active');
+        confirmEl.classList.remove('open');
+        startedAt = Date.now();
+        if(timerId) clearInterval(timerId);
+        timerId = setInterval(tick, 1000);
+        tick();
+      }
+
+      function stopUI(){
+        card.classList.remove('active');
+        if(timerId) { clearInterval(timerId); timerId = null; }
+        const dur = startedAt ? ((Date.now()-startedAt)/1000|0) : 0;
+        startedAt = null;
+
+        // Example: you can update chunks from your recorder callbacks
+        const msg = `${chunks} audio chunks processed • Duration ${fmt(dur)} • Output saved to /transcripts/session_${Date.now()}.txt`;
+        confirmDetails.textContent = msg;
+        confirmEl.classList.add('open');
+      }
+
+      // Wire buttons; call your existing record functions if present
+      function startAll(){
+        try{ window.startRecording && window.startRecording(); }catch{}
+        startUI();
+      }
+      function stopAll(){
+        try{ window.stopRecording && window.stopRecording(); }catch{}
+        stopUI();
+      }
+
+      btnStart.addEventListener('click', startAll);
+      palStart.addEventListener('click', startAll);
+      btnStop.addEventListener('click', stopAll);
+      palStop.addEventListener('click', stopAll);
+      confirmClose.addEventListener('click', ()=> confirmEl.classList.remove('open'));
+
+      // Example hook you can call when a chunk is handled in your code:
+      window.__incrementChunkCount = function(){ chunks++; };
+
+      // (Optional) If your code exposes events, you could do:
+      // window.addEventListener('recorder:chunk', ()=> window.__incrementChunkCount());
+      // window.addEventListener('recorder:started', startUI);
+      // window.addEventListener('recorder:stopped', stopUI);
+
+      // Basic canvas demo placeholder (remove if you already draw bars)
+      const c = document.getElementById('barsCanvas');
+      const ctx = c.getContext('2d');
+      const N = 48;
+      let t = 0;
+      function draw(){
+        ctx.clearRect(0,0,c.width,c.height);
+        const w = c.width/N, mid = c.height/2;
+        for(let i=0;i<N;i++){
+          const amp = (Math.sin((i+t)*0.25)+1)*0.5;
+          const h = 10 + amp*90;
+          const x = i*w + 4, y = mid - h/2;
+          ctx.fillStyle = i%2 ? 'rgba(53,224,255,0.5)' : 'rgba(255,255,255,0.35)';
+          ctx.fillRect(x, y, w-8, h);
+        }
+        t+=0.5;
+        requestAnimationFrame(draw);
+      }
+      draw();
+    })();
+  </script>
+</body>
+</html>
+
