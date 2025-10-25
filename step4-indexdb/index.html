@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Audio Recorder — Step 4 (IndexedDB Storage Test)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="./sai.css" />
+</head>
+<body>
+  <div class="app-shell">
+
+    <!-- Context ribbon -->
+    <div id="context-ribbon" class="ribbon">
+      In Browser › Audio Recorder › <span id="elapsed">00:00</span>
+      &nbsp;•&nbsp; <span class="kbd">⌘</span>/<span class="kbd">Ctrl</span>+<span class="kbd">K</span> to open palette
+    </div>
+
+    <!-- Floating command palette -->
+    <div id="palette" class="palette" aria-hidden="true">
+      <div class="row" style="margin-bottom:8px;">
+        <span class="icon-dot" aria-hidden="true"></span>
+        <input id="palette-input" type="text" placeholder="Ask: "Transcribe the latest recording and summarize…"" />
+        <button id="palette-start" class="btn btn-accent">🎙 Start</button>
+        <button id="palette-stop" class="btn hidden">⏹ Stop</button>
+      </div>
+      <div class="row-wrap muted">
+        <span>Suggestions:</span>
+        <span class="kbd">Summarize</span>
+        <span class="kbd">Export SRT</span>
+        <span class="kbd">Timestamps</span>
+      </div>
+    </div>
+
+    <!-- Main Title -->
+    <h1 style="display:flex;align-items:center;gap:8px;color:var(--text);margin:0 0 20px 0;">
+      Step 4 – IndexedDB Storage Test
+      <span id="mic-status" class="mic-dot" title="mic status"></span>
+    </h1>
+
+    <!-- Control Panel -->
+    <div class="control-panel">
+      <div class="row">
+        <label style="display:flex;align-items:center;gap:8px;color:var(--muted);">Chunk length (ms):
+          <input id="timeslice" type="number" value="5000" min="500" step="500" 
+                 style="background:rgba(255,255,255,0.08);border:1px solid var(--stroke);
+                        border-radius:8px;padding:6px 10px;color:var(--text);width:80px;" />
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;color:var(--muted);">Overlap (ms):
+          <input id="overlap" type="number" value="500" min="0" max="2000" step="100" 
+                 style="background:rgba(255,255,255,0.08);border:1px solid var(--stroke);
+                        border-radius:8px;padding:6px 10px;color:var(--text);width:80px;" />
+        </label>
+        <div class="spacer"></div>
+        <div id="storage-status" style="color:var(--muted);font-size:12px;">
+          Storage: Loading...
+        </div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button id="btn-start" class="btn btn-accent">🎙 Start Recording</button>
+        <button id="btn-stop" class="btn" disabled>⏹ Stop</button>
+        <button id="clearBtn" class="btn">🗑️ Clear</button>
+      </div>
+    </div>
+
+    <!-- Recorder card -->
+    <section id="recorder-card" class="recorder-card">
+      <div class="recorder-header">
+        <div>
+          <div class="title">Live Recording Status</div>
+          <div class="muted">Overlapping chunks for gap-free recording + IndexedDB storage</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Chunks Section -->
+    <div class="chunks-panel">
+      <h3 style="margin:0 0 16px 0;color:var(--text);">Recorded Chunks</h3>
+      <div id="chunkList" class="list"></div>
+    </div>
+
+    <!-- Log Section -->
+    <div class="log-panel">
+      <h3 style="margin:0 0 16px 0;color:var(--text);">Log</h3>
+      <textarea id="log" class="log" readonly></textarea>
+    </div>
+
+    <!-- Confirmation sheet -->
+    <section id="confirm" class="confirm" aria-hidden="true">
+      <div class="row" style="margin-bottom:8px;">
+        <div class="ok">✅ Recording Complete</div>
+        <div class="spacer"></div>
+        <button id="confirm-close" class="btn" type="button">Close</button>
+      </div>
+      <div class="muted" id="confirm-details">–</div>
+    </section>
+  </div>
+
+  <script src="./storage.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
