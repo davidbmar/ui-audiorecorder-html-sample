@@ -71,6 +71,11 @@
   var startedAt = null;
   var timerId = null;
   var currentSession = null;
+  var chunkStartTimes = []; // Track start time of each chunk
+  var liveWaveformCanvas = null;
+  var liveAnalyser = null;
+  var liveAnimationId = null;
+  var completedChunks = 0; // Track actually completed chunks
 
   // Prefer Ogg/Opus if available, then WebM/Opus.
   function chooseMime(){
@@ -212,7 +217,18 @@
     
     var meta = document.createElement('div'); 
     meta.className = 'meta';
-    meta.textContent = 'seg-' + pad3(idx) + ' (' + (blob.type || 'audio') + ') • ' + Math.round(blob.size / 1024) + 'KB';
+    
+    // Calculate time range for this chunk
+    var chunkStartTime = chunkStartTimes[idx - 1] || 0;
+    var chunkEndTime = Date.now();
+    var startOffset = chunkStartTime ? ((chunkStartTime - startedAt) / 1000) : 0;
+    var endOffset = (chunkEndTime - startedAt) / 1000;
+    var startTimeStr = fmt(startOffset);
+    var endTimeStr = fmt(endOffset);
+    
+    meta.innerHTML = 'seg-' + pad3(idx) + ' (' + (blob.type || 'audio') + ')<br>' +
+                     '<span style="color:var(--accent);font-size:11px;">' + 
+                     startTimeStr + ' → ' + endTimeStr + ' (' + Math.round(blob.size / 1024) + 'KB)</span>';
 
     var audioEl = document.createElement('audio');
     var localUrl = URL.createObjectURL(blob);
@@ -236,9 +252,22 @@
 
     row.appendChild(top);
     row.appendChild(shell);
-    list.appendChild(row);
+    
+    // Insert at the beginning (most recent on top)
+    if (list.firstChild) {
+      list.insertBefore(row, list.firstChild);
+    } else {
+      list.appendChild(row);
+    }
 
     renderWaveform(canvas, audioEl, blob);
+    
+    // Increment completed chunks count
+    completedChunks++;
+    
+    // Update the live chunk count display
+    var chunkCountEl = $('chunk-count');
+    if (chunkCountEl) chunkCountEl.textContent = completedChunks;
 
     // Save to IndexedDB if we have a current session
     if (currentSession && window.audioStorage) {
@@ -323,6 +352,181 @@
     activeRecorders = [];
   }
 
+  // ---------- live waveform ----------
+  function setupLiveWaveform(stream) {
+    try {
+      log('Setting up live waveform...');
+      
+      // Create Web Audio API context and analyser
+      if (!decodeCtx) {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        decodeCtx = new AC();
+      }
+      
+      // Resume context if it's suspended (required for autoplay policy)
+      if (decodeCtx.state === 'suspended') {
+        decodeCtx.resume().then(() => {
+          log('Audio context resumed');
+        });
+      }
+      
+      var source = decodeCtx.createMediaStreamSource(stream);
+      liveAnalyser = decodeCtx.createAnalyser();
+      liveAnalyser.fftSize = 256;
+      liveAnalyser.smoothingTimeConstant = 0.8;
+      source.connect(liveAnalyser);
+      
+      log('Web Audio API setup complete');
+      
+      // Create canvas for live waveform in recorder card
+      var recorderCard = $('recorder-card');
+      var recorderBody = recorderCard.querySelector('.recorder-body');
+      if (!recorderBody) {
+        recorderBody = document.createElement('div');
+        recorderBody.className = 'recorder-body';
+        recorderBody.style.cssText = 'padding:16px;';
+        recorderCard.appendChild(recorderBody);
+      }
+      
+      // Remove placeholder if it exists
+      var placeholder = recorderBody.querySelector('#live-placeholder');
+      if (placeholder) placeholder.remove();
+      
+      // Remove existing canvas if it exists
+      var existingCanvas = recorderBody.querySelector('.live-waveform');
+      if (existingCanvas) existingCanvas.remove();
+      
+      liveWaveformCanvas = document.createElement('canvas');
+      liveWaveformCanvas.className = 'live-waveform';
+      liveWaveformCanvas.style.cssText = 'width:100%;height:60px;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid var(--stroke);display:block;';
+      recorderBody.appendChild(liveWaveformCanvas);
+      
+      // Force canvas size setup
+      getCanvasSize(liveWaveformCanvas);
+      log('Canvas created and sized:', liveWaveformCanvas.width + 'x' + liveWaveformCanvas.height);
+      
+      // Add live stats
+      var existingStats = recorderBody.querySelector('#live-stats');
+      if (existingStats) existingStats.remove();
+      
+      var liveStats = document.createElement('div');
+      liveStats.id = 'live-stats';
+      liveStats.className = 'live-stats';
+      liveStats.style.cssText = 'display:flex;justify-content:space-between;margin-top:12px;font-size:14px;color:var(--accent);';
+      liveStats.innerHTML = '<span>Recording chunk: <strong id="current-chunk">1</strong></span>' +
+                           '<span>Total time: <strong id="total-time">00:00</strong></span>' +
+                           '<span>Chunks recorded: <strong id="chunk-count">0</strong></span>';
+      recorderBody.appendChild(liveStats);
+      
+      startLiveWaveform();
+    } catch (error) {
+      log('Error setting up live waveform:', error.message);
+    }
+  }
+  
+  function startLiveWaveform() {
+    if (!liveAnalyser || !liveWaveformCanvas) {
+      log('Cannot start live waveform - missing analyser or canvas');
+      return;
+    }
+    
+    log('Starting live waveform animation...');
+    
+    var ctx = liveWaveformCanvas.getContext('2d');
+    var bufferLength = liveAnalyser.frequencyBinCount;
+    var dataArray = new Uint8Array(bufferLength);
+    
+    log('Analyser setup - buffer length:', bufferLength);
+    
+    function drawLiveWaveform() {
+      if (!running) {
+        log('Stopping live waveform - not running');
+        return;
+      }
+      
+      liveAnimationId = requestAnimationFrame(drawLiveWaveform);
+      
+      liveAnalyser.getByteFrequencyData(dataArray);
+      
+      var size = getCanvasSize(liveWaveformCanvas);
+      var W = size.W, H = size.H;
+      
+      if (W === 0 || H === 0) {
+        return; // Skip if canvas has no size
+      }
+      
+      ctx.clearRect(0, 0, W, H);
+      
+      // Draw frequency bars with more visible rendering
+      var barWidth = Math.max(2, (W / bufferLength) * 2);
+      var barHeight;
+      var x = 0;
+      
+      // Check if we're getting any audio data
+      var hasAudio = false;
+      for (var j = 0; j < bufferLength; j++) {
+        if (dataArray[j] > 10) { // Threshold for audio detection
+          hasAudio = true;
+          break;
+        }
+      }
+      
+      if (!hasAudio) {
+        // Draw a baseline when no audio
+        ctx.fillStyle = '#35e0ff';
+        ctx.fillRect(0, H - 2, W, 2);
+      } else {
+        // Draw frequency bars
+        for (var i = 0; i < bufferLength; i++) {
+          barHeight = Math.max(2, (dataArray[i] / 255) * H * 0.8);
+          
+          // Use solid colors for better visibility
+          if (dataArray[i] > 128) {
+            ctx.fillStyle = '#3be38a'; // Green for high frequencies
+          } else {
+            ctx.fillStyle = '#35e0ff'; // Cyan for lower frequencies
+          }
+          
+          ctx.fillRect(x, H - barHeight, barWidth, barHeight);
+          
+          x += barWidth + 1;
+          if (x >= W) break; // Don't draw outside canvas
+        }
+      }
+    }
+    
+    drawLiveWaveform();
+  }
+  
+  function stopLiveWaveform() {
+    if (liveAnimationId) {
+      cancelAnimationFrame(liveAnimationId);
+      liveAnimationId = null;
+    }
+    if (liveWaveformCanvas) {
+      liveWaveformCanvas.remove();
+      liveWaveformCanvas = null;
+    }
+    
+    // Remove live stats
+    var liveStats = $('live-stats');
+    if (liveStats) liveStats.remove();
+    
+    // Restore placeholder
+    var recorderCard = $('recorder-card');
+    var recorderBody = recorderCard.querySelector('.recorder-body');
+    if (recorderBody && !recorderBody.querySelector('#live-placeholder')) {
+      var placeholder = document.createElement('div');
+      placeholder.id = 'live-placeholder';
+      placeholder.style.cssText = 'text-align:center;padding:20px;color:var(--muted);border:2px dashed var(--stroke);border-radius:8px;';
+      placeholder.innerHTML = '<div style="font-size:18px;margin-bottom:8px;">🎙️</div>' +
+                             '<div>Click "Start Recording" to see live waveform and recording stats</div>';
+      recorderBody.appendChild(placeholder);
+    }
+    
+    liveAnalyser = null;
+  }
+
   // ---------- start/stop ----------
   async function start(){
     if (running) return;
@@ -356,6 +560,9 @@
 
       // Start UI timer
       startUI();
+      
+      // Setup live waveform visualization
+      setupLiveWaveform(stream);
 
       // Overlapping recording strategy - start next recorder before previous stops
       var OVERLAP_MS = Math.max(0, Number(overlapInput.value) || 500); // Configurable overlap
@@ -363,6 +570,12 @@
       var loop = function(){
         if (!running) return;
         var idx = ++chunkIndex;
+        var chunkStartTime = Date.now();
+        chunkStartTimes[idx - 1] = chunkStartTime;
+        
+        // Update current chunk display
+        var currentChunkEl = $('current-chunk');
+        if (currentChunkEl) currentChunkEl.textContent = idx;
         
         recordOverlappingChunk(mediaStream, SLICE_MS, OVERLAP_MS, preferredMime, function(blob, actualDuration){
           log('Got overlapping chunk', idx, (blob.type||'audio/*'), (blob.size||0) + 'B', 'duration:', actualDuration.toFixed(2) + 's');
@@ -398,6 +611,9 @@
     palStop.classList.add('hidden');
     log('Stopped');
     
+    // Stop live waveform
+    stopLiveWaveform();
+    
     // Finalize session
     if (currentSession && window.audioStorage) {
       try {
@@ -421,6 +637,8 @@
   function clearList(){
     list.innerHTML = '';
     chunkIndex = 0;
+    completedChunks = 0;
+    chunkStartTimes = [];
     log('Cleared');
   }
 
@@ -475,6 +693,7 @@
         }
         
         chunkIndex = chunks.length;
+        completedChunks = chunks.length;
         log(`Restored ${chunks.length} chunks from previous session`);
       }
       
@@ -502,7 +721,15 @@
   function tick(){
     if(!startedAt) return;
     const secs = (Date.now()-startedAt)/1000|0;
-    elapsedEl.textContent = fmt(secs);
+    const chunkText = completedChunks > 0 ? ` • ${completedChunks} chunks` : '';
+    elapsedEl.textContent = fmt(secs) + chunkText;
+    
+    // Update live stats if recording
+    if (running) {
+      var totalTimeEl = $('total-time');
+      if (totalTimeEl) totalTimeEl.textContent = fmt(secs);
+      // Note: chunk count is updated in renderChunk when chunks are actually completed
+    }
   }
 
   function startUI(){
@@ -564,6 +791,29 @@
       // Placeholder for future functionality
     });
   });
+
+  // Add placeholder live status area on load
+  function initializeLiveStatusArea() {
+    var recorderCard = $('recorder-card');
+    var recorderBody = recorderCard.querySelector('.recorder-body');
+    if (!recorderBody) {
+      recorderBody = document.createElement('div');
+      recorderBody.className = 'recorder-body';
+      recorderBody.style.cssText = 'padding:16px;';
+      recorderCard.appendChild(recorderBody);
+    }
+    
+    // Add placeholder content
+    var placeholder = document.createElement('div');
+    placeholder.id = 'live-placeholder';
+    placeholder.style.cssText = 'text-align:center;padding:20px;color:var(--muted);border:2px dashed var(--stroke);border-radius:8px;';
+    placeholder.innerHTML = '<div style="font-size:18px;margin-bottom:8px;">🎙️</div>' +
+                           '<div>Click "Start Recording" to see live waveform and recording stats</div>';
+    recorderBody.appendChild(placeholder);
+  }
+
+  // Initialize the live status area
+  initializeLiveStatusArea();
 
   log('UI ready: Click Start and accept mic. Each chunk gets a centered waveform with click-to-seek.');
 
