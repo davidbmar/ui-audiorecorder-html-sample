@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>🎙️ Working SAI Audio Recorder Demo</title>
+  <style>
+    :root {
+      --bg-top: #0b1220;
+      --bg-bottom: #090d16;
+      --glass: rgba(255,255,255,0.08);
+      --stroke: rgba(255,255,255,0.12);
+      --text: #e6edf3;
+      --muted: #9aa6b2;
+      --accent: #35e0ff;
+      --good: #3be38a;
+      --danger: #ff6b6b;
+      --shadow: 0 10px 30px rgba(0,0,0,0.35);
+      --radius-xl: 18px;
+      --radius-lg: 14px;
+      --radius-md: 12px;
+      --blur: blur(16px);
+    }
+
+    * { box-sizing: border-box; }
+    
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+      color: var(--text);
+      background: linear-gradient(to bottom, var(--bg-top), var(--bg-bottom)) fixed;
+      min-height: 100vh;
+    }
+
+    .demo-shell {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px;
+      position: relative;
+    }
+
+    .demo-shell::after {
+      content: "";
+      position: fixed; 
+      inset: -10%;
+      pointer-events: none;
+      background: radial-gradient(60% 40% at 50% 0%, rgba(255,255,255,0.06), transparent 60%);
+      filter: blur(40px);
+      opacity: .8;
+    }
+
+    .demo-container {
+      width: min(92vw, 800px);
+      background: var(--glass);
+      backdrop-filter: var(--blur);
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+      padding: 32px;
+      z-index: 10;
+    }
+
+    .demo-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .demo-title {
+      font-size: 2rem;
+      font-weight: 700;
+      margin: 0 0 12px 0;
+      background: linear-gradient(135deg, var(--text), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .demo-subtitle {
+      color: var(--muted);
+      margin: 0;
+      font-size: 1.1rem;
+    }
+
+    .controls-section {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .recording-status {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .status-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--muted);
+      transition: all 0.3s ease;
+    }
+
+    .status-dot.recording {
+      background: var(--danger);
+      box-shadow: 0 0 12px var(--danger);
+      animation: pulse 1s infinite;
+    }
+
+    .status-dot.ready {
+      background: var(--good);
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border: 1px solid var(--stroke);
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-size: 14px;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn:hover {
+      background: rgba(255,255,255,0.12);
+      transform: translateY(-1px);
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(180deg, rgba(53,224,255,.18), rgba(53,224,255,.12));
+      border-color: rgba(53,224,255,.35);
+      color: #b8f4ff;
+    }
+
+    .settings {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .setting-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .setting-input {
+      padding: 6px 10px;
+      border: 1px solid var(--stroke);
+      border-radius: 6px;
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+      width: 80px;
+    }
+
+    .recordings-section {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .recordings-header {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin: 0 0 16px 0;
+      color: var(--text);
+    }
+
+    .recording-item {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .recording-meta {
+      flex: 1;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .recording-audio {
+      width: 200px;
+    }
+
+    .log-section {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+    }
+
+    .log-header {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin: 0 0 16px 0;
+      color: var(--text);
+    }
+
+    .log-output {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      height: 120px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 0.8rem;
+      color: var(--text);
+      white-space: pre-wrap;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--muted);
+    }
+
+    .info-panel {
+      background: rgba(53,224,255,0.1);
+      border: 1px solid rgba(53,224,255,0.3);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-bottom: 24px;
+    }
+
+    .info-panel-header {
+      color: var(--accent);
+      font-weight: 600;
+      margin: 0 0 8px 0;
+    }
+
+    .info-panel-text {
+      color: var(--text);
+      margin: 0;
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 768px) {
+      .demo-container {
+        padding: 20px;
+      }
+      
+      .controls {
+        flex-direction: column;
+        align-items: center;
+      }
+      
+      .settings {
+        flex-direction: column;
+        align-items: center;
+      }
+      
+      .recording-item {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .recording-audio {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="demo-shell">
+    <div class="demo-container">
+      
+      <div class="demo-header">
+        <h1 class="demo-title">🎙️ SAI Audio Recorder</h1>
+        <p class="demo-subtitle">
+          Gap-free audio recording with chunked storage - Actually working demo!
+        </p>
+      </div>
+
+      <div class="info-panel">
+        <h3 class="info-panel-header">💡 How to use this demo</h3>
+        <p class="info-panel-text">
+          Click "Start Recording" below and grant microphone permission when prompted. 
+          The recorder will capture audio in chunks with overlap to eliminate gaps.
+          Each chunk will appear in the recordings section below.
+        </p>
+      </div>
+
+      <div class="controls-section">
+        <div class="recording-status">
+          <div id="status-dot" class="status-dot ready"></div>
+          <span id="status-text">Ready to Record</span>
+          <span id="timer">00:00</span>
+        </div>
+
+        <div class="settings">
+          <div class="setting-group">
+            <label>Chunk Duration:</label>
+            <select id="chunk-duration" class="setting-input">
+              <option value="3000">3 seconds</option>
+              <option value="5000" selected>5 seconds</option>
+              <option value="10000">10 seconds</option>
+            </select>
+          </div>
+          
+          <div class="setting-group">
+            <label>Overlap:</label>
+            <input type="number" id="overlap" class="setting-input" value="500" min="100" max="2000" step="100">
+            <span>ms</span>
+          </div>
+        </div>
+
+        <div class="controls">
+          <button id="start-btn" class="btn btn-primary">
+            🎙 Start Recording
+          </button>
+          <button id="stop-btn" class="btn" disabled>
+            ⏹ Stop Recording
+          </button>
+          <button id="clear-btn" class="btn">
+            🗑️ Clear All
+          </button>
+        </div>
+      </div>
+
+      <div class="recordings-section">
+        <h3 class="recordings-header">🎵 Recorded Chunks</h3>
+        <div id="recordings-list">
+          <div class="empty-state">
+            <p>No recordings yet. Start recording to see chunks appear here!</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="log-section">
+        <h3 class="log-header">📝 Activity Log</h3>
+        <div id="log-output" class="log-output"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    class WorkingAudioRecorder {
+      constructor() {
+        this.isRecording = false;
+        this.mediaStream = null;
+        this.chunks = [];
+        this.chunkIndex = 0;
+        this.startTime = null;
+        this.timerInterval = null;
+        this.activeRecorders = [];
+        this.chunkTimer = null;
+        
+        this.init();
+      }
+
+      init() {
+        this.setupEventListeners();
+        this.log('🎙️ Audio recorder initialized');
+        this.checkBrowserSupport();
+      }
+
+      setupEventListeners() {
+        document.getElementById('start-btn').addEventListener('click', () => this.startRecording());
+        document.getElementById('stop-btn').addEventListener('click', () => this.stopRecording());
+        document.getElementById('clear-btn').addEventListener('click', () => this.clearRecordings());
+      }
+
+      checkBrowserSupport() {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          this.log('❌ ERROR: getUserMedia not supported in this browser');
+          this.updateStatus('error', 'Browser not supported');
+          return false;
+        }
+        
+        if (!window.MediaRecorder) {
+          this.log('❌ ERROR: MediaRecorder not supported in this browser');
+          this.updateStatus('error', 'MediaRecorder not supported');
+          return false;
+        }
+        
+        this.log('✅ Browser supports audio recording');
+        return true;
+      }
+
+      async startRecording() {
+        if (this.isRecording) return;
+        
+        try {
+          this.log('🎤 Requesting microphone access...');
+          this.mediaStream = await navigator.mediaDevices.getUserMedia({ 
+            audio: {
+              channelCount: 1,
+              sampleRate: 48000,
+              echoCancellation: true,
+              noiseSuppression: true
+            }
+          });
+          
+          this.isRecording = true;
+          this.startTime = Date.now();
+          this.chunkIndex = 0;
+          
+          this.updateStatus('recording', 'Recording...');
+          this.updateControls();
+          this.startTimer();
+          
+          this.log('✅ Recording started with overlapping chunks');
+          this.startChunkRecording();
+          
+        } catch (error) {
+          this.log(`❌ Error starting recording: ${error.message}`);
+          this.updateStatus('error', 'Failed to access microphone');
+        }
+      }
+
+      stopRecording() {
+        if (!this.isRecording) return;
+        
+        this.isRecording = false;
+        this.stopTimer();
+        
+        // Stop all active recorders
+        this.activeRecorders.forEach(recorder => {
+          try {
+            if (recorder.state === 'recording') {
+              recorder.stop();
+            }
+          } catch (e) {
+            // Ignore errors when stopping
+          }
+        });
+        this.activeRecorders = [];
+        
+        // Clear chunk timer
+        if (this.chunkTimer) {
+          clearTimeout(this.chunkTimer);
+          this.chunkTimer = null;
+        }
+        
+        // Stop media stream
+        if (this.mediaStream) {
+          this.mediaStream.getTracks().forEach(track => track.stop());
+          this.mediaStream = null;
+        }
+        
+        this.updateStatus('ready', 'Recording complete');
+        this.updateControls();
+        
+        const duration = this.startTime ? ((Date.now() - this.startTime) / 1000).toFixed(1) : 0;
+        this.log(`✅ Recording stopped. ${this.chunkIndex} chunks, ${duration}s duration`);
+      }
+
+      startChunkRecording() {
+        if (!this.isRecording) return;
+        
+        const chunkDuration = parseInt(document.getElementById('chunk-duration').value) || 5000;
+        const overlap = parseInt(document.getElementById('overlap').value) || 500;
+        const mimeType = this.getBestMimeType();
+        
+        const currentChunk = ++this.chunkIndex;
+        this.log(`🎵 Starting chunk ${currentChunk} (${chunkDuration}ms + ${overlap}ms overlap)`);
+        
+        try {
+          const recorder = new MediaRecorder(this.mediaStream, { mimeType });
+          const startTime = Date.now();
+          let hasData = false;
+          
+          recorder.ondataavailable = (event) => {
+            if (event.data && event.data.size > 0) {
+              hasData = true;
+              const actualDuration = (Date.now() - startTime) / 1000;
+              const blob = new Blob([event.data], { type: mimeType });
+              this.addRecordingToUI(blob, currentChunk, actualDuration);
+              this.log(`✅ Chunk ${currentChunk} ready: ${blob.size} bytes, ${actualDuration.toFixed(1)}s`);
+            }
+          };
+          
+          recorder.onstop = () => {
+            const index = this.activeRecorders.indexOf(recorder);
+            if (index > -1) {
+              this.activeRecorders.splice(index, 1);
+            }
+            
+            if (!hasData) {
+              this.log(`⚠️ Warning: Chunk ${currentChunk} has no data`);
+            }
+          };
+          
+          recorder.onerror = (event) => {
+            this.log(`❌ Recorder error for chunk ${currentChunk}: ${event.error}`);
+          };
+          
+          this.activeRecorders.push(recorder);
+          recorder.start();
+          
+          // Stop this recorder after chunk duration + overlap
+          setTimeout(() => {
+            try {
+              if (recorder.state === 'recording') {
+                recorder.stop();
+              }
+            } catch (e) {
+              // Ignore
+            }
+          }, chunkDuration + overlap);
+          
+          // Start next chunk before this one ends (creating overlap)
+          if (this.isRecording) {
+            this.chunkTimer = setTimeout(() => this.startChunkRecording(), chunkDuration);
+          }
+          
+        } catch (error) {
+          this.log(`❌ Error creating recorder for chunk ${currentChunk}: ${error.message}`);
+        }
+      }
+
+      getBestMimeType() {
+        const types = [
+          'audio/webm;codecs=opus',
+          'audio/ogg;codecs=opus',
+          'audio/webm',
+          'audio/ogg'
+        ];
+        
+        for (const type of types) {
+          if (MediaRecorder.isTypeSupported(type)) {
+            return type;
+          }
+        }
+        
+        return ''; // Let browser choose
+      }
+
+      addRecordingToUI(blob, chunkIndex, duration) {
+        const list = document.getElementById('recordings-list');
+        
+        // Remove empty state if it exists
+        const emptyState = list.querySelector('.empty-state');
+        if (emptyState) {
+          emptyState.remove();
+        }
+        
+        const item = document.createElement('div');
+        item.className = 'recording-item';
+        
+        const meta = document.createElement('div');
+        meta.className = 'recording-meta';
+        meta.innerHTML = `
+          <strong>Chunk ${chunkIndex.toString().padStart(3, '0')}</strong><br>
+          ${(blob.size / 1024).toFixed(1)} KB • ${duration.toFixed(1)}s • ${blob.type}
+        `;
+        
+        const audio = document.createElement('audio');
+        audio.className = 'recording-audio';
+        audio.controls = true;
+        audio.preload = 'metadata';
+        audio.src = URL.createObjectURL(blob);
+        
+        // Clean up object URL when audio is removed
+        audio.addEventListener('loadstart', () => {
+          setTimeout(() => {
+            if (!document.contains(audio)) {
+              URL.revokeObjectURL(audio.src);
+            }
+          }, 1000);
+        });
+        
+        item.appendChild(meta);
+        item.appendChild(audio);
+        list.appendChild(item);
+        
+        // Scroll to show new item
+        item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+
+      clearRecordings() {
+        const list = document.getElementById('recordings-list');
+        
+        // Clean up object URLs
+        list.querySelectorAll('audio').forEach(audio => {
+          URL.revokeObjectURL(audio.src);
+        });
+        
+        list.innerHTML = '<div class="empty-state"><p>No recordings yet. Start recording to see chunks appear here!</p></div>';
+        this.chunkIndex = 0;
+        this.log('🗑️ All recordings cleared');
+      }
+
+      updateStatus(status, text) {
+        const dot = document.getElementById('status-dot');
+        const statusText = document.getElementById('status-text');
+        
+        dot.className = `status-dot ${status}`;
+        statusText.textContent = text;
+      }
+
+      updateControls() {
+        const startBtn = document.getElementById('start-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        
+        startBtn.disabled = this.isRecording;
+        stopBtn.disabled = !this.isRecording;
+      }
+
+      startTimer() {
+        this.timerInterval = setInterval(() => {
+          if (this.startTime) {
+            const elapsed = Math.floor((Date.now() - this.startTime) / 1000);
+            const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const seconds = (elapsed % 60).toString().padStart(2, '0');
+            document.getElementById('timer').textContent = `${minutes}:${seconds}`;
+          }
+        }, 1000);
+      }
+
+      stopTimer() {
+        if (this.timerInterval) {
+          clearInterval(this.timerInterval);
+          this.timerInterval = null;
+        }
+      }
+
+      log(message) {
+        const timestamp = new Date().toLocaleTimeString();
+        const logOutput = document.getElementById('log-output');
+        logOutput.textContent += `[${timestamp}] ${message}\n`;
+        logOutput.scrollTop = logOutput.scrollHeight;
+        console.log(`[SAI Recorder] ${message}`);
+      }
+    }
+
+    // Initialize the recorder when the page loads
+    document.addEventListener('DOMContentLoaded', () => {
+      window.recorder = new WorkingAudioRecorder();
+    });
+  </script>
+</body>
+</html>

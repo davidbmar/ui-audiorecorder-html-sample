@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Minimal Integration Example</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    
+    .form-container {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+      color: #333;
+    }
+    
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    
+    textarea {
+      height: 100px;
+      resize: vertical;
+    }
+    
+    .voice-recorder {
+      border: 2px dashed #ccc;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      background: #fafafa;
+      margin: 20px 0;
+    }
+    
+    .voice-recorder.recording {
+      border-color: #ff4444;
+      background: #fff5f5;
+    }
+    
+    .voice-recorder.has-recording {
+      border-color: #44aa44;
+      background: #f5fff5;
+    }
+    
+    .recorder-status {
+      margin-bottom: 15px;
+      font-weight: 600;
+    }
+    
+    .status-idle { color: #666; }
+    .status-recording { color: #ff4444; }
+    .status-recorded { color: #44aa44; }
+    
+    .btn {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 5px;
+      font-size: 14px;
+    }
+    
+    .btn:hover {
+      background: #0056b3;
+    }
+    
+    .btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    
+    .btn-danger {
+      background: #dc3545;
+    }
+    
+    .btn-danger:hover {
+      background: #c82333;
+    }
+    
+    .btn-success {
+      background: #28a745;
+    }
+    
+    .btn-success:hover {
+      background: #218838;
+    }
+    
+    .recording-item {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      padding: 10px;
+      margin: 10px 0;
+    }
+    
+    .recording-meta {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+    
+    .submit-btn {
+      background: #28a745;
+      font-size: 16px;
+      padding: 12px 30px;
+      width: 100%;
+    }
+    
+    .success-message {
+      background: #d4edda;
+      color: #155724;
+      padding: 15px;
+      border-radius: 4px;
+      margin: 20px 0;
+      border: 1px solid #c3e6cb;
+    }
+  </style>
+</head>
+<body>
+  <div class="form-container">
+    <h1>📝 Contact Form with Voice Message</h1>
+    <p>This example shows how to add voice recording to any existing form.</p>
+    
+    <form id="contactForm">
+      <div class="form-group">
+        <label for="name">Name *</label>
+        <input type="text" id="name" name="name" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="email">Email *</label>
+        <input type="email" id="email" name="email" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="message">Message</label>
+        <textarea id="message" name="message" placeholder="Type your message here..."></textarea>
+      </div>
+      
+      <div class="voice-recorder" id="voiceRecorder">
+        <div class="recorder-status">
+          <span id="statusText" class="status-idle">🎤 Add a voice message (optional)</span>
+        </div>
+        
+        <div>
+          <button type="button" id="recordBtn" class="btn">Start Recording</button>
+          <button type="button" id="stopBtn" class="btn btn-danger" disabled>Stop Recording</button>
+          <button type="button" id="clearBtn" class="btn" disabled>Clear Recording</button>
+        </div>
+        
+        <div id="recordingsList"></div>
+      </div>
+      
+      <button type="submit" class="btn submit-btn">Send Message</button>
+    </form>
+  </div>
+
+  <script>
+    class SimpleVoiceRecorder {
+      constructor() {
+        this.isRecording = false;
+        this.mediaStream = null;
+        this.mediaRecorder = null;
+        this.recordedChunks = [];
+        this.recordedBlobs = [];
+        
+        this.setupEventListeners();
+      }
+      
+      setupEventListeners() {
+        document.getElementById('recordBtn').addEventListener('click', () => this.startRecording());
+        document.getElementById('stopBtn').addEventListener('click', () => this.stopRecording());
+        document.getElementById('clearBtn').addEventListener('click', () => this.clearRecordings());
+        document.getElementById('contactForm').addEventListener('submit', (e) => this.handleSubmit(e));
+      }
+      
+      async startRecording() {
+        try {
+          this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          
+          const mimeType = this.getSupportedMimeType();
+          this.mediaRecorder = new MediaRecorder(this.mediaStream, { mimeType });
+          
+          this.recordedChunks = [];
+          
+          this.mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+              this.recordedChunks.push(event.data);
+            }
+          };
+          
+          this.mediaRecorder.onstop = () => {
+            const blob = new Blob(this.recordedChunks, { type: mimeType });
+            this.addRecording(blob);
+          };
+          
+          this.mediaRecorder.start();
+          this.isRecording = true;
+          this.updateUI();
+          
+        } catch (error) {
+          alert('Could not access microphone: ' + error.message);
+        }
+      }
+      
+      stopRecording() {
+        if (this.mediaRecorder && this.isRecording) {
+          this.mediaRecorder.stop();
+          this.mediaStream.getTracks().forEach(track => track.stop());
+          this.isRecording = false;
+          this.updateUI();
+        }
+      }
+      
+      addRecording(blob) {
+        this.recordedBlobs.push(blob);
+        
+        const item = document.createElement('div');
+        item.className = 'recording-item';
+        
+        const meta = document.createElement('div');
+        meta.className = 'recording-meta';
+        meta.textContent = `Recording ${this.recordedBlobs.length} • ${(blob.size / 1024).toFixed(1)} KB • ${new Date().toLocaleTimeString()}`;
+        
+        const audio = document.createElement('audio');
+        audio.controls = true;
+        audio.src = URL.createObjectURL(blob);
+        audio.style.width = '100%';
+        audio.style.marginTop = '8px';
+        
+        item.appendChild(meta);
+        item.appendChild(audio);
+        
+        document.getElementById('recordingsList').appendChild(item);
+        
+        this.updateUI();
+      }
+      
+      clearRecordings() {
+        // Clean up object URLs
+        document.querySelectorAll('#recordingsList audio').forEach(audio => {
+          URL.revokeObjectURL(audio.src);
+        });
+        
+        document.getElementById('recordingsList').innerHTML = '';
+        this.recordedBlobs = [];
+        this.updateUI();
+      }
+      
+      updateUI() {
+        const recorder = document.getElementById('voiceRecorder');
+        const statusText = document.getElementById('statusText');
+        const recordBtn = document.getElementById('recordBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        
+        if (this.isRecording) {
+          recorder.className = 'voice-recorder recording';
+          statusText.textContent = '🔴 Recording... Click stop when finished';
+          statusText.className = 'status-recording';
+          recordBtn.disabled = true;
+          stopBtn.disabled = false;
+        } else if (this.recordedBlobs.length > 0) {
+          recorder.className = 'voice-recorder has-recording';
+          statusText.textContent = `✅ ${this.recordedBlobs.length} voice message(s) recorded`;
+          statusText.className = 'status-recorded';
+          recordBtn.disabled = false;
+          stopBtn.disabled = true;
+          clearBtn.disabled = false;
+        } else {
+          recorder.className = 'voice-recorder';
+          statusText.textContent = '🎤 Add a voice message (optional)';
+          statusText.className = 'status-idle';
+          recordBtn.disabled = false;
+          stopBtn.disabled = true;
+          clearBtn.disabled = true;
+        }
+      }
+      
+      getSupportedMimeType() {
+        const types = ['audio/webm', 'audio/ogg', 'audio/mp4'];
+        for (const type of types) {
+          if (MediaRecorder.isTypeSupported(type)) {
+            return type;
+          }
+        }
+        return '';
+      }
+      
+      handleSubmit(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(e.target);
+        const data = {
+          name: formData.get('name'),
+          email: formData.get('email'),
+          message: formData.get('message'),
+          hasVoiceMessage: this.recordedBlobs.length > 0,
+          voiceMessageCount: this.recordedBlobs.length,
+          submittedAt: new Date().toISOString()
+        };
+        
+        console.log('Form submitted with data:', data);
+        console.log('Voice recordings:', this.recordedBlobs);
+        
+        // Show success message
+        e.target.innerHTML = `
+          <div class="success-message">
+            <h3>✅ Message Sent Successfully!</h3>
+            <p>Thank you ${data.name}! We received your message${data.hasVoiceMessage ? ` and ${data.voiceMessageCount} voice recording(s)` : ''}.</p>
+            <p>We'll get back to you at ${data.email} within 24 hours.</p>
+            <button type="button" onclick="location.reload()" class="btn">Send Another Message</button>
+          </div>
+        `;
+      }
+    }
+    
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', () => {
+      new SimpleVoiceRecorder();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web Component - SAI Audio Recorder</title>
+  <link rel="stylesheet" href="../docs.css">
+</head>
+<body>
+  <div class="docs-shell">
+    
+    <!-- Header -->
+    <header class="docs-header">
+      <h1 class="docs-title">Web Component</h1>
+      <p class="docs-subtitle">
+        Use SAI Audio Recorder as a custom HTML element: &lt;sai-recorder&gt;
+      </p>
+    </header>
+
+    <!-- Back Navigation -->
+    <nav class="docs-nav">
+      <a href="../index.html" class="nav-item">
+        <div class="nav-icon">←</div>
+        <div class="nav-text">
+          <div class="nav-title">Back to Documentation</div>
+          <div class="nav-desc">Return to main docs</div>
+        </div>
+      </a>
+    </nav>
+
+    <!-- Why Web Components -->
+    <section class="docs-card">
+      <div class="card-header">
+        <div class="card-icon">🧩</div>
+        <div>
+          <h2 class="card-title">Why Web Components?</h2>
+          <p class="card-subtitle">Modern, framework-agnostic approach</p>
+        </div>
+      </div>
+      
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="feature-icon">🔌</div>
+          <h3 class="feature-title">Framework Agnostic</h3>
+          <p class="feature-desc">Works with React, Vue, Angular, or vanilla HTML</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">📦</div>
+          <h3 class="feature-title">Self-Contained</h3>
+          <p class="feature-desc">Encapsulated styles and functionality</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">⚡</div>
+          <h3 class="feature-title">Simple API</h3>
+          <p class="feature-desc">Configure with HTML attributes</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">🎯</div>
+          <h3 class="feature-title">Standards-Based</h3>
+          <p class="feature-desc">Built on web standards, future-proof</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Basic Usage -->
+    <section class="docs-card">
+      <div class="card-header">
+        <div class="card-icon">🚀</div>
+        <div>
+          <h2 class="card-title">Basic Usage</h2>
+          <p class="card-subtitle">Get started with one line of HTML</p>
+        </div>
+      </div>
+      
+      <h3>Step 1: Include the Web Component</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">HTML</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">&lt;!-- Include the SAI Web Component --&gt;
+&lt;script src="path/to/sai-recorder-component.js"&gt;&lt;/script&gt;</code>
+      </div>
+      
+      <h3>Step 2: Use the Custom Element</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">HTML</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">&lt;!-- Basic recorder --&gt;
+&lt;sai-recorder&gt;&lt;/sai-recorder&gt;
+
+&lt;!-- With configuration --&gt;
+&lt;sai-recorder 
+  chunk-duration="3000"
+  overlap="300"
+  theme="minimal"
+  storage="enabled"&gt;
+&lt;/sai-recorder&gt;</code>
+      </div>
+      
+      <div class="demo-area">
+        <div class="demo-header">
+          <div class="demo-title">Live Example</div>
+          <div class="demo-badge">Interactive</div>
+        </div>
+        
+        <div style="border: 2px dashed var(--stroke); border-radius: 8px; padding: 20px; text-align: center;">
+          <p class="text-muted mb-2">Web component would render here:</p>
+          <code>&lt;sai-recorder theme="sai"&gt;&lt;/sai-recorder&gt;</code>
+          <p class="text-muted mt-2">Complete component implementation below ↓</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Web Component Implementation -->
+    <section class="docs-card">
+      <div class="card-header">
+        <div class="card-icon">⚙️</div>
+        <div>
+          <h2 class="card-title">Web Component Implementation</h2>
+          <p class="card-subtitle">Complete sai-recorder-component.js file</p>
+        </div>
+      </div>
+      
+      <p>Here's the complete web component implementation. Save this as <code>sai-recorder-component.js</code>:</p>
+      
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">class SAIRecorderComponent extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: 'open' });
+    
+    // Default configuration
+    this.config = {
+      chunkDuration: 5000,
+      overlap: 500,
+      theme: 'sai',
+      storage: 'enabled',
+      waveforms: 'enabled',
+      controls: 'full'
+    };
+    
+    // State
+    this.recording = false;
+    this.chunks = [];
+    this.sessionId = null;
+  }
+  
+  static get observedAttributes() {
+    return [
+      'chunk-duration', 'overlap', 'theme', 'storage', 
+      'waveforms', 'controls', 'title'
+    ];
+  }
+  
+  attributeChangedCallback(name, oldValue, newValue) {
+    const configKey = name.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
+    this.config[configKey] = newValue;
+    if (this.connected) {
+      this.render();
+    }
+  }
+  
+  connectedCallback() {
+    this.connected = true;
+    this.loadDependencies().then(() => {
+      this.render();
+      this.initializeRecorder();
+    });
+  }
+  
+  async loadDependencies() {
+    // Load SAI CSS
+    if (!document.querySelector('link[href*="sai.css"]')) {
+      const cssLink = document.createElement('link');
+      cssLink.rel = 'stylesheet';
+      cssLink.href = this.getAttribute('css-path') || './sai.css';
+      document.head.appendChild(cssLink);
+    }
+    
+    // Load storage and app scripts if not already loaded
+    if (!window.AudioStorageManager) {
+      await this.loadScript(this.getAttribute('storage-path') || './storage.js');
+    }
+    if (!window.SAIRecorderCore) {
+      await this.loadScript(this.getAttribute('app-path') || './app.js');
+    }
+  }
+  
+  loadScript(src) {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = src;
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+  }
+  
+  render() {
+    const theme = this.config.theme;
+    const controls = this.config.controls;
+    const title = this.getAttribute('title') || 'Audio Recorder';
+    
+    this.shadowRoot.innerHTML = `
+      &lt;style&gt;
+        :host {
+          display: block;
+          font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+        }
+        
+        /* Import SAI theme variables */
+        :host {
+          --bg-top: #0b1220;
+          --bg-bottom: #090d16;
+          --glass: rgba(255,255,255,0.08);
+          --stroke: rgba(255,255,255,0.12);
+          --text: #e6edf3;
+          --muted: #9aa6b2;
+          --accent: #35e0ff;
+          --radius-xl: 18px;
+          --radius-md: 12px;
+          --blur: blur(16px);
+        }
+        
+        .recorder-container {
+          ${theme === 'minimal' ? 'border: 1px solid #ddd; border-radius: 8px; padding: 16px; background: #f9f9f9;' : ''}
+          ${theme === 'sai' ? 'background: var(--glass); backdrop-filter: var(--blur); border: 1px solid var(--stroke); border-radius: var(--radius-xl); padding: 20px;' : ''}
+        }
+        
+        .recorder-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 16px;
+          ${theme === 'sai' ? 'color: var(--text);' : ''}
+        }
+        
+        .recorder-title {
+          font-size: 1.1rem;
+          font-weight: 600;
+          margin: 0;
+        }
+        
+        .recorder-status {
+          font-size: 0.8rem;
+          ${theme === 'sai' ? 'color: var(--muted);' : 'color: #666;'}
+        }
+        
+        .controls {
+          display: flex;
+          gap: 8px;
+          margin-bottom: 16px;
+          flex-wrap: wrap;
+          align-items: center;
+        }
+        
+        .btn {
+          padding: 8px 16px;
+          border-radius: ${theme === 'sai' ? '999px' : '6px'};
+          border: 1px solid ${theme === 'sai' ? 'var(--stroke)' : '#ddd'};
+          background: ${theme === 'sai' ? 'rgba(255,255,255,0.06)' : '#fff'};
+          color: ${theme === 'sai' ? 'var(--text)' : '#333'};
+          cursor: pointer;
+          transition: all 0.15s ease;
+          font-size: 0.9rem;
+        }
+        
+        .btn:hover {
+          background: ${theme === 'sai' ? 'rgba(255,255,255,0.12)' : '#f0f0f0'};
+        }
+        
+        .btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+        
+        .btn-primary {
+          background: ${theme === 'sai' ? 'linear-gradient(180deg, rgba(53,224,255,.18), rgba(53,224,255,.12))' : '#007bff'};
+          border-color: ${theme === 'sai' ? 'rgba(53,224,255,.35)' : '#007bff'};
+          color: ${theme === 'sai' ? '#b8f4ff' : '#fff'};
+        }
+        
+        .settings {
+          display: ${controls === 'minimal' ? 'none' : 'flex'};
+          gap: 12px;
+          font-size: 0.85rem;
+          margin-bottom: 12px;
+          flex-wrap: wrap;
+        }
+        
+        .setting-group {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          ${theme === 'sai' ? 'color: var(--muted);' : 'color: #666;'}
+        }
+        
+        .setting-input {
+          padding: 4px 8px;
+          border: 1px solid ${theme === 'sai' ? 'var(--stroke)' : '#ddd'};
+          border-radius: 4px;
+          background: ${theme === 'sai' ? 'rgba(255,255,255,0.08)' : '#fff'};
+          color: ${theme === 'sai' ? 'var(--text)' : '#333'};
+          width: 80px;
+        }
+        
+        .recordings {
+          margin-top: 16px;
+        }
+        
+        .recordings-title {
+          font-size: 0.9rem;
+          font-weight: 600;
+          margin: 0 0 12px 0;
+          ${theme === 'sai' ? 'color: var(--text);' : ''}
+        }
+        
+        .recording-item {
+          border: 1px solid ${theme === 'sai' ? 'var(--stroke)' : '#eee'};
+          border-radius: ${theme === 'sai' ? 'var(--radius-md)' : '6px'};
+          padding: 12px;
+          margin: 8px 0;
+          background: ${theme === 'sai' ? 'rgba(255,255,255,0.04)' : '#fff'};
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+        }
+        
+        .recording-meta {
+          font-size: 0.8rem;
+          ${theme === 'sai' ? 'color: var(--muted);' : 'color: #666;'}
+        }
+        
+        .recording-audio {
+          flex: 1;
+          max-width: 300px;
+        }
+        
+        .recording-waveform {
+          width: 100%;
+          height: 60px;
+          border: 1px solid ${theme === 'sai' ? 'var(--stroke)' : '#eee'};
+          border-radius: 4px;
+          background: ${theme === 'sai' ? 'rgba(255,255,255,0.03)' : '#f9f9f9'};
+          margin-top: 8px;
+          display: ${this.config.waveforms === 'disabled' ? 'none' : 'block'};
+        }
+        
+        .status-indicator {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: #ccc;
+          margin-left: 8px;
+          transition: background 0.3s ease;
+        }
+        
+        .status-indicator.recording {
+          background: #ff4444;
+          box-shadow: 0 0 8px #ff4444;
+        }
+        
+        .status-indicator.ready {
+          background: #44ff44;
+        }
+      &lt;/style&gt;
+      
+      &lt;div class="recorder-container"&gt;
+        &lt;div class="recorder-header"&gt;
+          &lt;h3 class="recorder-title"&gt;${title}&lt;/h3&gt;
+          &lt;div class="recorder-status"&gt;
+            Ready &lt;span class="status-indicator" id="status"&gt;&lt;/span&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+        
+        &lt;div class="settings"&gt;
+          &lt;div class="setting-group"&gt;
+            &lt;label&gt;Chunk:&lt;/label&gt;
+            &lt;input type="number" class="setting-input" id="chunk-duration" 
+                   value="${this.config.chunkDuration}" min="1000" step="1000"&gt;
+            &lt;span&gt;ms&lt;/span&gt;
+          &lt;/div&gt;
+          &lt;div class="setting-group"&gt;
+            &lt;label&gt;Overlap:&lt;/label&gt;
+            &lt;input type="number" class="setting-input" id="overlap" 
+                   value="${this.config.overlap}" min="0" step="100"&gt;
+            &lt;span&gt;ms&lt;/span&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+        
+        &lt;div class="controls"&gt;
+          &lt;button class="btn btn-primary" id="start-btn"&gt;🎙 Record&lt;/button&gt;
+          &lt;button class="btn" id="stop-btn" disabled&gt;⏹ Stop&lt;/button&gt;
+          &lt;button class="btn" id="clear-btn"&gt;🗑️ Clear&lt;/button&gt;
+          &lt;button class="btn" id="download-btn" style="display: none;"&gt;💾 Download&lt;/button&gt;
+        &lt;/div&gt;
+        
+        &lt;div class="recordings"&gt;
+          &lt;h4 class="recordings-title"&gt;Recordings&lt;/h4&gt;
+          &lt;div id="recordings-list"&gt;&lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    `;
+  }
+  
+  initializeRecorder() {
+    const startBtn = this.shadowRoot.getElementById('start-btn');
+    const stopBtn = this.shadowRoot.getElementById('stop-btn');
+    const clearBtn = this.shadowRoot.getElementById('clear-btn');
+    const downloadBtn = this.shadowRoot.getElementById('download-btn');
+    const status = this.shadowRoot.getElementById('status');
+    const recordingsList = this.shadowRoot.getElementById('recordings-list');
+    
+    // Event listeners
+    startBtn.addEventListener('click', () => this.startRecording());
+    stopBtn.addEventListener('click', () => this.stopRecording());
+    clearBtn.addEventListener('click', () => this.clearRecordings());
+    downloadBtn.addEventListener('click', () => this.downloadRecordings());
+    
+    // Update settings when changed
+    this.shadowRoot.getElementById('chunk-duration').addEventListener('change', (e) => {
+      this.config.chunkDuration = parseInt(e.target.value);
+    });
+    
+    this.shadowRoot.getElementById('overlap').addEventListener('change', (e) => {
+      this.config.overlap = parseInt(e.target.value);
+    });
+    
+    // Initialize storage if enabled
+    if (this.config.storage === 'enabled' && window.AudioStorageManager) {
+      this.storage = new AudioStorageManager();
+      this.storage.init().then(() => {
+        this.loadPreviousRecordings();
+      });
+    }
+    
+    // Set initial status
+    status.classList.add('ready');
+  }
+  
+  async startRecording() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      this.mediaStream = stream;
+      this.recording = true;
+      this.chunks = [];
+      
+      // Update UI
+      const startBtn = this.shadowRoot.getElementById('start-btn');
+      const stopBtn = this.shadowRoot.getElementById('stop-btn');
+      const status = this.shadowRoot.getElementById('status');
+      
+      startBtn.disabled = true;
+      stopBtn.disabled = false;
+      status.classList.remove('ready');
+      status.classList.add('recording');
+      
+      // Create session if storage enabled
+      if (this.storage) {
+        this.session = await this.storage.createSession({
+          chunkDuration: this.config.chunkDuration,
+          overlap: this.config.overlap
+        });
+        this.sessionId = this.session.id;
+      }
+      
+      // Start recording chunks
+      this.startChunkRecording();
+      
+      // Dispatch event
+      this.dispatchEvent(new CustomEvent('recording-started', {
+        detail: { sessionId: this.sessionId }
+      }));
+      
+    } catch (error) {
+      console.error('Failed to start recording:', error);
+      this.dispatchEvent(new CustomEvent('recording-error', {
+        detail: { error: error.message }
+      }));
+    }
+  }
+  
+  stopRecording() {
+    this.recording = false;
+    
+    if (this.mediaStream) {
+      this.mediaStream.getTracks().forEach(track => track.stop());
+      this.mediaStream = null;
+    }
+    
+    // Update UI
+    const startBtn = this.shadowRoot.getElementById('start-btn');
+    const stopBtn = this.shadowRoot.getElementById('stop-btn');
+    const status = this.shadowRoot.getElementById('status');
+    const downloadBtn = this.shadowRoot.getElementById('download-btn');
+    
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+    status.classList.remove('recording');
+    status.classList.add('ready');
+    
+    if (this.chunks.length > 0) {
+      downloadBtn.style.display = 'inline-block';
+    }
+    
+    // Finalize session
+    if (this.storage && this.sessionId) {
+      this.storage.updateSession(this.sessionId, {
+        status: 'completed',
+        chunkCount: this.chunks.length
+      });
+    }
+    
+    // Dispatch event
+    this.dispatchEvent(new CustomEvent('recording-stopped', {
+      detail: { 
+        sessionId: this.sessionId,
+        chunkCount: this.chunks.length 
+      }
+    }));
+  }
+  
+  startChunkRecording() {
+    if (!this.recording) return;
+    
+    const recorder = new MediaRecorder(this.mediaStream);
+    let chunkIndex = this.chunks.length;
+    
+    recorder.ondataavailable = async (event) => {
+      if (event.data.size > 0) {
+        const blob = new Blob([event.data], { type: event.data.type });
+        this.chunks.push(blob);
+        
+        // Save to storage
+        if (this.storage && this.sessionId) {
+          await this.storage.saveChunk(this.sessionId, chunkIndex, blob, this.config.chunkDuration / 1000);
+        }
+        
+        // Add to UI
+        this.addRecordingToUI(blob, chunkIndex);
+        
+        // Dispatch event
+        this.dispatchEvent(new CustomEvent('chunk-recorded', {
+          detail: { 
+            chunkIndex,
+            blob,
+            size: blob.size 
+          }
+        }));
+      }
+    };
+    
+    recorder.start();
+    
+    // Stop after chunk duration + overlap
+    setTimeout(() => {
+      if (recorder.state === 'recording') {
+        recorder.stop();
+      }
+    }, this.config.chunkDuration + this.config.overlap);
+    
+    // Start next chunk before this one ends (for gap-free recording)
+    if (this.recording) {
+      setTimeout(() => this.startChunkRecording(), this.config.chunkDuration);
+    }
+  }
+  
+  addRecordingToUI(blob, index) {
+    const recordingsList = this.shadowRoot.getElementById('recordings-list');
+    const item = document.createElement('div');
+    item.className = 'recording-item';
+    
+    const audio = document.createElement('audio');
+    audio.controls = true;
+    audio.src = URL.createObjectURL(blob);
+    audio.className = 'recording-audio';
+    
+    const meta = document.createElement('div');
+    meta.className = 'recording-meta';
+    meta.textContent = `Chunk ${String(index + 1).padStart(3, '0')} • ${Math.round(blob.size / 1024)}KB`;
+    
+    item.appendChild(meta);
+    item.appendChild(audio);
+    
+    // Add waveform if enabled
+    if (this.config.waveforms === 'enabled') {
+      const canvas = document.createElement('canvas');
+      canvas.className = 'recording-waveform';
+      item.appendChild(canvas);
+      // Waveform rendering would go here
+    }
+    
+    recordingsList.appendChild(item);
+  }
+  
+  clearRecordings() {
+    this.chunks = [];
+    const recordingsList = this.shadowRoot.getElementById('recordings-list');
+    recordingsList.innerHTML = '';
+    
+    const downloadBtn = this.shadowRoot.getElementById('download-btn');
+    downloadBtn.style.display = 'none';
+    
+    this.dispatchEvent(new CustomEvent('recordings-cleared'));
+  }
+  
+  async downloadRecordings() {
+    if (this.chunks.length === 0) return;
+    
+    // Combine all chunks into one blob
+    const combinedBlob = new Blob(this.chunks, { type: 'audio/webm' });
+    const url = URL.createObjectURL(combinedBlob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `recording-${new Date().toISOString().slice(0, 19)}.webm`;
+    a.click();
+    
+    URL.revokeObjectURL(url);
+    
+    this.dispatchEvent(new CustomEvent('recording-downloaded', {
+      detail: { 
+        filename: a.download,
+        size: combinedBlob.size 
+      }
+    }));
+  }
+  
+  async loadPreviousRecordings() {
+    if (!this.storage) return;
+    
+    try {
+      const sessions = await this.storage.getAllSessions();
+      if (sessions.length > 0) {
+        const latestSession = sessions[0];
+        const chunks = await this.storage.getChunksBySession(latestSession.id);
+        
+        for (const chunk of chunks) {
+          this.addRecordingToUI(chunk.blob, chunk.chunkIndex);
+        }
+        
+        if (chunks.length > 0) {
+          const downloadBtn = this.shadowRoot.getElementById('download-btn');
+          downloadBtn.style.display = 'inline-block';
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to load previous recordings:', error);
+    }
+  }
+  
+  // Public API methods
+  getRecordings() {
+    return this.chunks;
+  }
+  
+  isRecording() {
+    return this.recording;
+  }
+  
+  getSessionId() {
+    return this.sessionId;
+  }
+}
+
+// Register the custom element
+customElements.define('sai-recorder', SAIRecorderComponent);</code>
+      </div>
+    </section>
+
+    <!-- Attributes & API -->
+    <section class="docs-card">
+      <div class="card-header">
+        <div class="card-icon">📋</div>
+        <div>
+          <h2 class="card-title">Attributes & API</h2>
+          <p class="card-subtitle">Configure the component with HTML attributes</p>
+        </div>
+      </div>
+      
+      <h3>Supported Attributes</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Attribute</th>
+            <th>Default</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>chunk-duration</code></td>
+            <td><code>5000</code></td>
+            <td>Recording chunk length in milliseconds</td>
+          </tr>
+          <tr>
+            <td><code>overlap</code></td>
+            <td><code>500</code></td>
+            <td>Overlap between chunks in milliseconds</td>
+          </tr>
+          <tr>
+            <td><code>theme</code></td>
+            <td><code>sai</code></td>
+            <td>Visual theme: <code>sai</code>, <code>minimal</code>, <code>custom</code></td>
+          </tr>
+          <tr>
+            <td><code>storage</code></td>
+            <td><code>enabled</code></td>
+            <td>IndexedDB storage: <code>enabled</code> or <code>disabled</code></td>
+          </tr>
+          <tr>
+            <td><code>waveforms</code></td>
+            <td><code>enabled</code></td>
+            <td>Waveform visualization: <code>enabled</code> or <code>disabled</code></td>
+          </tr>
+          <tr>
+            <td><code>controls</code></td>
+            <td><code>full</code></td>
+            <td>Control level: <code>full</code>, <code>minimal</code>, <code>none</code></td>
+          </tr>
+          <tr>
+            <td><code>title</code></td>
+            <td><code>Audio Recorder</code></td>
+            <td>Component title text</td>
+          </tr>
+        </tbody>
+      </table>
+      
+      <h3>JavaScript API</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">const recorder = document.querySelector('sai-recorder');
+
+// Methods
+recorder.startRecording();           // Start recording
+recorder.stopRecording();            // Stop recording
+recorder.clearRecordings();          // Clear all recordings
+recorder.downloadRecordings();       // Download combined audio
+recorder.getRecordings();            // Get array of Blobs
+recorder.isRecording();              // Check if currently recording
+recorder.getSessionId();             // Get current session ID
+
+// Event listeners
+recorder.addEventListener('recording-started', (e) => {
+  console.log('Recording started:', e.detail.sessionId);
+});
+
+recorder.addEventListener('chunk-recorded', (e) => {
+  console.log('New chunk:', e.detail.chunkIndex, e.detail.size);
+});
+
+recorder.addEventListener('recording-stopped', (e) => {
+  console.log('Recording stopped:', e.detail.chunkCount);
+});
+
+recorder.addEventListener('recording-error', (e) => {
+  console.error('Recording error:', e.detail.error);
+});
+
+recorder.addEventListener('recordings-cleared', () => {
+  console.log('Recordings cleared');
+});
+
+recorder.addEventListener('recording-downloaded', (e) => {
+  console.log('Downloaded:', e.detail.filename, e.detail.size);
+});</code>
+      </div>
+    </section>
+
+    <!-- Examples -->
+    <section class="docs-card">
+      <div class="card-header">
+        <div class="card-icon">💡</div>
+        <div>
+          <h2 class="card-title">Usage Examples</h2>
+          <p class="card-subtitle">Real-world examples with different configurations</p>
+        </div>
+      </div>
+      
+      <h3>Minimal Voice Note Recorder</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">HTML</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">&lt;sai-recorder 
+  theme="minimal"
+  controls="minimal"
+  title="Voice Note"
+  chunk-duration="3000"&gt;
+&lt;/sai-recorder&gt;</code>
+      </div>
+      
+      <h3>High-Quality Podcast Recorder</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">HTML</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">&lt;sai-recorder 
+  theme="sai"
+  title="🎤 Podcast Studio"
+  chunk-duration="2000"
+  overlap="200"
+  storage="enabled"
+  waveforms="enabled"&gt;
+&lt;/sai-recorder&gt;</code>
+      </div>
+      
+      <h3>Customer Support Call Recorder</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">HTML</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">&lt;sai-recorder 
+  title="📞 Call Recording"
+  chunk-duration="10000"
+  overlap="1000"
+  storage="enabled"
+  id="support-recorder"&gt;
+&lt;/sai-recorder&gt;
+
+&lt;script&gt;
+document.getElementById('support-recorder').addEventListener('recording-started', (e) => {
+  // Log call start time to support system
+  logCallStart(e.detail.sessionId);
+});
+&lt;/script&gt;</code>
+      </div>
+      
+      <h3>React Integration</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">JSX</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">import { useRef, useEffect } from 'react';
+
+function VoiceRecorder() {
+  const recorderRef = useRef(null);
+  
+  useEffect(() => {
+    const recorder = recorderRef.current;
+    
+    const handleChunk = (e) => {
+      console.log('New recording chunk:', e.detail);
+    };
+    
+    recorder.addEventListener('chunk-recorded', handleChunk);
+    
+    return () => {
+      recorder.removeEventListener('chunk-recorded', handleChunk);
+    };
+  }, []);
+  
+  return (
+    &lt;sai-recorder 
+      ref={recorderRef}
+      theme="sai"
+      title="Voice Message"
+      chunk-duration="5000"
+    /&gt;
+  );
+}</code>
+      </div>
+      
+      <h3>Vue.js Integration</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">Vue</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">&lt;template&gt;
+  &lt;sai-recorder 
+    ref="recorder"
+    :theme="theme"
+    :title="title"
+    :chunk-duration="chunkDuration"
+    @recording-started="onRecordingStarted"
+    @chunk-recorded="onChunkRecorded"
+    @recording-stopped="onRecordingStopped"
+  /&gt;
+&lt;/template&gt;
+
+&lt;script&gt;
+export default {
+  data() {
+    return {
+      theme: 'sai',
+      title: 'Voice Recorder',
+      chunkDuration: 5000
+    };
+  },
+  methods: {
+    onRecordingStarted(event) {
+      console.log('Recording started:', event.detail);
+    },
+    onChunkRecorded(event) {
+      this.$emit('chunk-ready', event.detail);
+    },
+    onRecordingStopped(event) {
+      console.log('Recording completed:', event.detail);
+    },
+    startRecording() {
+      this.$refs.recorder.startRecording();
+    },
+    stopRecording() {
+      this.$refs.recorder.stopRecording();
+    }
+  }
+};
+&lt;/script&gt;</code>
+      </div>
+    </section>
+
+    <!-- Browser Support -->
+    <section class="docs-card">
+      <div class="card-header">
+        <div class="card-icon">🌐</div>
+        <div>
+          <h2 class="card-title">Browser Support</h2>
+          <p class="card-subtitle">Modern browsers with web component support</p>
+        </div>
+      </div>
+      
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="feature-icon">✅</div>
+          <h3 class="feature-title">Chrome 54+</h3>
+          <p class="feature-desc">Full support including custom elements</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">✅</div>
+          <h3 class="feature-title">Firefox 63+</h3>
+          <p class="feature-desc">Native web component support</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">✅</div>
+          <h3 class="feature-title">Safari 10.1+</h3>
+          <p class="feature-desc">Full compatibility with polyfills</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">✅</div>
+          <h3 class="feature-title">Edge 79+</h3>
+          <p class="feature-desc">Chromium-based Edge support</p>
+        </div>
+      </div>
+      
+      <div class="alert alert-info">
+        <div class="alert-icon">💡</div>
+        <div>
+          <strong>Need IE11 support?</strong> Include web component polyfills for older browsers. 
+          See <a href="https://www.webcomponents.org/polyfills/">webcomponents.org</a> for details.
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <script>
+    // Copy code functionality
+    function copyCode(button) {
+      const codeBlock = button.closest('.code-block');
+      const code = codeBlock.querySelector('.code-content').textContent;
+      
+      navigator.clipboard.writeText(code).then(() => {
+        const originalText = button.textContent;
+        button.textContent = 'Copied!';
+        button.style.background = 'rgba(59,227,138,0.2)';
+        
+        setTimeout(() => {
+          button.textContent = originalText;
+          button.style.background = '';
+        }, 2000);
+      }).catch(err => {
+        console.error('Copy failed:', err);
+        button.textContent = 'Copy failed';
+        setTimeout(() => {
+          button.textContent = 'Copy';
+        }, 2000);
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quick Start Guide - SAI Audio Recorder</title>
+  <link rel="stylesheet" href="../docs.css">
+</head>
+<body>
+  <div class="docs-shell">
+    
+    <!-- Header -->
+    <header class="docs-header">
+      <h1 class="docs-title">Quick Start Guide</h1>
+      <p class="docs-subtitle">
+        Get SAI Audio Recorder running in your project in under 5 minutes
+      </p>
+    </header>
+
+    <!-- Back Navigation -->
+    <nav class="docs-nav">
+      <a href="../index.html" class="nav-item">
+        <div class="nav-icon">←</div>
+        <div class="nav-text">
+          <div class="nav-title">Back to Documentation</div>
+          <div class="nav-desc">Return to main docs</div>
+        </div>
+      </a>
+    </nav>
+
+    <!-- Step 1: Download Files -->
+    <section class="docs-card">
+      <div class="card-header">
+        <div class="card-icon">📁</div>
+        <div>
+          <h2 class="card-title">Step 1: Get the Files</h2>
+          <p class="card-subtitle">Three files are all you need</p>
+        </div>
+      </div>
+      
+      <p>Copy these three files from the <code>step4-indexdb</code> directory into your project:</p>
+      
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="feature-icon">🎨</div>
+          <h3 class="feature-title">sai.css</h3>
+          <p class="feature-desc">SAI theme styles with glass morphism design</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">💾</div>
+          <h3 class="feature-title">storage.js</h3>
+          <p class="feature-desc">IndexedDB storage manager for persistent data</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">🎙️</div>
+          <h3 class="feature-title">app.js</h3>
+          <p class="feature-desc">Core recording functionality with gap-free chunks</p>
+        </div>
+      </div>
+      
+      <div class="alert alert-info">
+        <div class="alert-icon">💡</div>
+        <div>
+          <strong>Already have these files?</strong> You can skip to Step 2. The files are located in the <code>step4-indexdb</code> folder of this project.
+        </div>
+      </div>
+    </section>
+
+    <!-- Step 2: Basic HTML -->
+    <section class="docs-card">
+      <div class="card-header">
+        <div class="card-icon">📄</div>
+        <div>
+          <h2 class="card-title">Step 2: Basic HTML Setup</h2>
+          <p class="card-subtitle">Minimal HTML to get started</p>
+        </div>
+      </div>
+      
+      <p>Create a new HTML file with this basic structure:</p>
+      
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">HTML</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+  &lt;meta charset="utf-8"&gt;
+  &lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;
+  &lt;title&gt;My Audio Recorder App&lt;/title&gt;
+  &lt;link rel="stylesheet" href="sai.css"&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;div class="app-shell"&gt;
+    
+    &lt;h1 style="display:flex;align-items:center;gap:8px;color:var(--text);margin:0 0 20px 0;"&gt;
+      My Audio Recorder
+      &lt;span id="mic-status" class="mic-dot" title="mic status"&gt;&lt;/span&gt;
+    &lt;/h1&gt;
+
+    &lt;!-- Control Panel --&gt;
+    &lt;div class="control-panel"&gt;
+      &lt;div class="row"&gt;
+        &lt;label style="display:flex;align-items:center;gap:8px;color:var(--muted);"&gt;Chunk length (ms):
+          &lt;input id="timeslice" type="number" value="5000" min="500" step="500" 
+                 style="background:rgba(255,255,255,0.08);border:1px solid var(--stroke);
+                        border-radius:8px;padding:6px 10px;color:var(--text);width:80px;" /&gt;
+        &lt;/label&gt;
+        &lt;label style="display:flex;align-items:center;gap:8px;color:var(--muted);"&gt;Overlap (ms):
+          &lt;input id="overlap" type="number" value="500" min="0" max="2000" step="100" 
+                 style="background:rgba(255,255,255,0.08);border:1px solid var(--stroke);
+                        border-radius:8px;padding:6px 10px;color:var(--text);width:80px;" /&gt;
+        &lt;/label&gt;
+        &lt;div class="spacer"&gt;&lt;/div&gt;
+        &lt;div id="storage-status" style="color:var(--muted);font-size:12px;"&gt;
+          Storage: Loading...
+        &lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div class="row" style="margin-top:10px"&gt;
+        &lt;button id="btn-start" class="btn btn-accent"&gt;🎙 Start Recording&lt;/button&gt;
+        &lt;button id="btn-stop" class="btn" disabled&gt;⏹ Stop&lt;/button&gt;
+        &lt;button id="clearBtn" class="btn"&gt;🗑️ Clear&lt;/button&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;!-- Recorder Status Card --&gt;
+    &lt;section id="recorder-card" class="recorder-card"&gt;
+      &lt;div class="recorder-header"&gt;
+        &lt;div&gt;
+          &lt;div class="title"&gt;Live Recording Status&lt;/div&gt;
+          &lt;div class="muted"&gt;Gap-free recording with IndexedDB storage&lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/section&gt;
+
+    &lt;!-- Chunks Section --&gt;
+    &lt;div class="chunks-panel"&gt;
+      &lt;h3 style="margin:0 0 16px 0;color:var(--text);"&gt;Recorded Chunks&lt;/h3&gt;
+      &lt;div id="chunkList" class="list"&gt;&lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;!-- Log Section --&gt;
+    &lt;div class="log-panel"&gt;
+      &lt;h3 style="margin:0 0 16px 0;color:var(--text);"&gt;Log&lt;/h3&gt;
+      &lt;textarea id="log" class="log" readonly&gt;&lt;/textarea&gt;
+    &lt;/div&gt;
+
+  &lt;/div&gt;
+
+  &lt;script src="storage.js"&gt;&lt;/script&gt;
+  &lt;script src="app.js"&gt;&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code>
+      </div>
+      
+      <div class="alert alert-success">
+        <div class="alert-icon">✅</div>
+        <div>
+          <strong>That's it!</strong> Save this as an HTML file and open it in your browser. The recorder is ready to use.
+        </div>
+      </div>
+    </section>
+
+    <!-- Step 3: Customization -->
+    <section class="docs-card">
+      <div class="card-header">
+        <div class="card-icon">🎨</div>
+        <div>
+          <h2 class="card-title">Step 3: Customize (Optional)</h2>
+          <p class="card-subtitle">Make it your own</p>
+        </div>
+      </div>
+      
+      <h3>Change the Theme Colors</h3>
+      <p>Override CSS variables to match your brand:</p>
+      
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">CSS</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">&lt;style&gt;
+:root {
+  --accent: #ff6b6b;           /* Change accent color */
+  --bg-top: #1a1a2e;          /* Change background gradient */
+  --bg-bottom: #16213e;
+  --glass: rgba(255,255,255,0.05);  /* Adjust glass opacity */
+}
+&lt;/style&gt;</code>
+      </div>
+      
+      <h3>Simplified Layout</h3>
+      <p>Want a minimal recorder? Use this simplified version:</p>
+      
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">HTML</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">&lt;div class="app-shell"&gt;
+  &lt;h1 style="color:var(--text);text-align:center;"&gt;Simple Recorder&lt;/h1&gt;
+  
+  &lt;div class="control-panel" style="text-align:center;"&gt;
+    &lt;button id="btn-start" class="btn btn-accent"&gt;🎙 Record&lt;/button&gt;
+    &lt;button id="btn-stop" class="btn" disabled&gt;⏹ Stop&lt;/button&gt;
+  &lt;/div&gt;
+  
+  &lt;div class="chunks-panel"&gt;
+    &lt;div id="chunkList" class="list"&gt;&lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</code>
+      </div>
+      
+      <h3>Hide Elements You Don't Need</h3>
+      <p>Remove sections you don't want:</p>
+      
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">CSS</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">/* Hide the log panel */
+.log-panel { display: none; }
+
+/* Hide the storage status */
+#storage-status { display: none; }
+
+/* Hide the recorder card */
+.recorder-card { display: none; }
+
+/* Make controls smaller */
+.control-panel { padding: 12px; }</code>
+      </div>
+    </section>
+
+    <!-- Common Use Cases -->
+    <section class="docs-card">
+      <div class="card-header">
+        <div class="card-icon">💡</div>
+        <div>
+          <h2 class="card-title">Common Use Cases</h2>
+          <p class="card-subtitle">Ready-to-use examples for popular scenarios</p>
+        </div>
+      </div>
+      
+      <h3>📝 Voice Notes App</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">HTML</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">&lt;div class="app-shell"&gt;
+  &lt;h1&gt;📝 Voice Notes&lt;/h1&gt;
+  
+  &lt;div class="control-panel"&gt;
+    &lt;div class="row"&gt;
+      &lt;input type="text" placeholder="Note title..." 
+             style="flex:1;background:rgba(255,255,255,0.08);border:1px solid var(--stroke);
+                    border-radius:8px;padding:8px 12px;color:var(--text);"&gt;
+      &lt;button id="btn-start" class="btn btn-accent"&gt;🎙 Record Note&lt;/button&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+  
+  &lt;div class="chunks-panel"&gt;
+    &lt;h3&gt;My Voice Notes&lt;/h3&gt;
+    &lt;div id="chunkList" class="list"&gt;&lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</code>
+      </div>
+      
+      <h3>🎤 Podcast Recorder</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">HTML</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">&lt;div class="app-shell"&gt;
+  &lt;h1&gt;🎤 Podcast Studio&lt;/h1&gt;
+  
+  &lt;div class="control-panel"&gt;
+    &lt;div class="row"&gt;
+      &lt;label&gt;Episode: &lt;input type="text" placeholder="Episode title"&gt;&lt;/label&gt;
+      &lt;label&gt;Quality: 
+        &lt;select id="timeslice"&gt;
+          &lt;option value="3000"&gt;High (3s chunks)&lt;/option&gt;
+          &lt;option value="5000" selected&gt;Normal (5s chunks)&lt;/option&gt;
+          &lt;option value="10000"&gt;Economy (10s chunks)&lt;/option&gt;
+        &lt;/select&gt;
+      &lt;/label&gt;
+    &lt;/div&gt;
+    &lt;div class="row"&gt;
+      &lt;button id="btn-start" class="btn btn-accent"&gt;🎙 Start Recording&lt;/button&gt;
+      &lt;button id="btn-stop" class="btn" disabled&gt;⏹ Stop&lt;/button&gt;
+      &lt;button class="btn"&gt;💾 Export&lt;/button&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+  
+  &lt;div class="chunks-panel"&gt;
+    &lt;h3&gt;Recording Segments&lt;/h3&gt;
+    &lt;div id="chunkList" class="list"&gt;&lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</code>
+      </div>
+      
+      <h3>📞 Customer Support</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">HTML</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">&lt;div class="app-shell"&gt;
+  &lt;h1&gt;📞 Support Call Recorder&lt;/h1&gt;
+  
+  &lt;div class="control-panel"&gt;
+    &lt;div class="row"&gt;
+      &lt;label&gt;Ticket #: &lt;input type="text" placeholder="SUPP-12345"&gt;&lt;/label&gt;
+      &lt;label&gt;Customer: &lt;input type="text" placeholder="Customer name"&gt;&lt;/label&gt;
+    &lt;/div&gt;
+    &lt;div class="row"&gt;
+      &lt;button id="btn-start" class="btn btn-accent"&gt;🎙 Start Call Recording&lt;/button&gt;
+      &lt;button id="btn-stop" class="btn" disabled&gt;⏹ End Call&lt;/button&gt;
+      &lt;button class="btn"&gt;📋 Add to Ticket&lt;/button&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+  
+  &lt;div class="chunks-panel"&gt;
+    &lt;h3&gt;Call Recording&lt;/h3&gt;
+    &lt;div id="chunkList" class="list"&gt;&lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</code>
+      </div>
+    </section>
+
+    <!-- Troubleshooting -->
+    <section class="docs-card">
+      <div class="card-header">
+        <div class="card-icon">🔧</div>
+        <div>
+          <h2 class="card-title">Troubleshooting</h2>
+          <p class="card-subtitle">Common issues and solutions</p>
+        </div>
+      </div>
+      
+      <h3>❌ Microphone permission denied</h3>
+      <div class="alert alert-warning">
+        <div class="alert-icon">⚠️</div>
+        <div>
+          <strong>Solution:</strong> Make sure you're serving the page over HTTPS (or localhost). Modern browsers require secure context for microphone access.
+        </div>
+      </div>
+      
+      <h3>❌ No audio in recordings</h3>
+      <ul>
+        <li>Check that your microphone is working in other apps</li>
+        <li>Look for browser notifications asking for microphone permission</li>
+        <li>Try refreshing the page and granting permission again</li>
+        <li>Check the browser console for error messages</li>
+      </ul>
+      
+      <h3>❌ Recordings not saving</h3>
+      <ul>
+        <li>Check that IndexedDB is supported (all modern browsers)</li>
+        <li>Clear browser data and try again</li>
+        <li>Check the storage status indicator in the control panel</li>
+        <li>Look for console errors related to storage</li>
+      </ul>
+      
+      <h3>❌ Files not loading</h3>
+      <ul>
+        <li>Make sure all three files (sai.css, storage.js, app.js) are in the same directory</li>
+        <li>Check the browser console for 404 errors</li>
+        <li>Verify file paths in your HTML are correct</li>
+      </ul>
+      
+      <div class="alert alert-info">
+        <div class="alert-icon">💡</div>
+        <div>
+          <strong>Still having issues?</strong> Check the log panel in the recorder - it shows detailed information about what's happening.
+        </div>
+      </div>
+    </section>
+
+    <!-- Next Steps -->
+    <section class="docs-card">
+      <div class="card-header">
+        <div class="card-icon">🚀</div>
+        <div>
+          <h2 class="card-title">Next Steps</h2>
+          <p class="card-subtitle">Take your recorder to the next level</p>
+        </div>
+      </div>
+      
+      <div class="feature-grid">
+        <a href="../index.html#web-component" class="feature-card" style="text-decoration: none; color: inherit;">
+          <div class="feature-icon">🧩</div>
+          <h3 class="feature-title">Web Components</h3>
+          <p class="feature-desc">Use as a custom HTML element: &lt;sai-recorder&gt;</p>
+        </a>
+        
+        <a href="../index.html#js-api" class="feature-card" style="text-decoration: none; color: inherit;">
+          <div class="feature-icon">⚡</div>
+          <h3 class="feature-title">JavaScript API</h3>
+          <p class="feature-desc">Programmatic control with events and callbacks</p>
+        </a>
+        
+        <a href="../index.html#examples" class="feature-card" style="text-decoration: none; color: inherit;">
+          <div class="feature-icon">💡</div>
+          <h3 class="feature-title">Real Examples</h3>
+          <p class="feature-desc">See complete applications using the recorder</p>
+        </a>
+        
+        <a href="../index.html#api-reference" class="feature-card" style="text-decoration: none; color: inherit;">
+          <div class="feature-icon">📚</div>
+          <h3 class="feature-title">API Reference</h3>
+          <p class="feature-desc">Complete documentation of all methods</p>
+        </a>
+      </div>
+    </section>
+
+  </div>
+
+  <script>
+    // Copy code functionality
+    function copyCode(button) {
+      const codeBlock = button.closest('.code-block');
+      const code = codeBlock.querySelector('.code-content').textContent;
+      
+      navigator.clipboard.writeText(code).then(() => {
+        const originalText = button.textContent;
+        button.textContent = 'Copied!';
+        button.style.background = 'rgba(59,227,138,0.2)';
+        
+        setTimeout(() => {
+          button.textContent = originalText;
+          button.style.background = '';
+        }, 2000);
+      }).catch(err => {
+        console.error('Copy failed:', err);
+        button.textContent = 'Copy failed';
+        setTimeout(() => {
+          button.textContent = 'Copy';
+        }, 2000);
+      });
+    }
+  </script>
+</body>
+</html>

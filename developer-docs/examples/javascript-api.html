@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JavaScript API - SAI Audio Recorder</title>
+  <link rel="stylesheet" href="../docs.css">
+</head>
+<body>
+  <div class="docs-shell">
+    
+    <!-- Header -->
+    <header class="docs-header">
+      <h1 class="docs-title">JavaScript API</h1>
+      <p class="docs-subtitle">
+        Programmatic control of SAI Audio Recorder with events, callbacks, and advanced features
+      </p>
+    </header>
+
+    <!-- Back Navigation -->
+    <nav class="docs-nav">
+      <a href="../index.html" class="nav-item">
+        <div class="nav-icon">←</div>
+        <div class="nav-text">
+          <div class="nav-title">Back to Documentation</div>
+          <div class="nav-desc">Return to main docs</div>
+        </div>
+      </a>
+    </nav>
+
+    <!-- API Overview -->
+    <section class="docs-card">
+      <div class="card-header">
+        <div class="card-icon">⚡</div>
+        <div>
+          <h2 class="card-title">API Overview</h2>
+          <p class="card-subtitle">Complete programmatic control over recording functionality</p>
+        </div>
+      </div>
+      
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="feature-icon">🎯</div>
+          <h3 class="feature-title">Direct Control</h3>
+          <p class="feature-desc">Start, stop, pause, and manage recordings programmatically</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">📡</div>
+          <h3 class="feature-title">Event System</h3>
+          <p class="feature-desc">React to recording events with callbacks and listeners</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">🔧</div>
+          <h3 class="feature-title">Configuration</h3>
+          <p class="feature-desc">Dynamic settings, quality control, and format selection</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">💾</div>
+          <h3 class="feature-title">Data Access</h3>
+          <p class="feature-desc">Direct access to audio blobs, metadata, and storage</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Core API -->
+    <section class="docs-card">
+      <div class="card-header">
+        <div class="card-icon">🏗️</div>
+        <div>
+          <h2 class="card-title">Core API</h2>
+          <p class="card-subtitle">Main SAIRecorder class and methods</p>
+        </div>
+      </div>
+      
+      <h3>Initialize the Recorder</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">// Create a new recorder instance
+const recorder = new SAIRecorder({
+  // Required: DOM elements
+  startButton: '#start-btn',        // Start button selector
+  stopButton: '#stop-btn',          // Stop button selector
+  container: '#recordings-list',    // Container for recordings
+  
+  // Optional: Configuration
+  chunkDuration: 5000,              // Chunk length in ms
+  overlapDuration: 500,             // Overlap between chunks
+  mimeType: 'audio/webm',           // Audio format
+  enableStorage: true,              // IndexedDB storage
+  enableWaveforms: true,            // Waveform visualization
+  
+  // Optional: Callbacks
+  onRecordingStart: (session) => {
+    console.log('Recording started:', session.id);
+  },
+  onChunkReady: (chunk, index) => {
+    console.log('New chunk:', index, chunk.size);
+  },
+  onRecordingStop: (session) => {
+    console.log('Recording stopped:', session.chunkCount);
+  },
+  onError: (error) => {
+    console.error('Recording error:', error);
+  }
+});</code>
+      </div>
+      
+      <h3>Basic Methods</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">// Start recording
+await recorder.start();
+
+// Stop recording
+await recorder.stop();
+
+// Pause recording (keeps stream active)
+recorder.pause();
+
+// Resume recording
+recorder.resume();
+
+// Check if currently recording
+if (recorder.isRecording()) {
+  console.log('Currently recording');
+}
+
+// Get current session info
+const session = recorder.getCurrentSession();
+console.log('Session ID:', session.id);
+console.log('Chunks recorded:', session.chunkCount);
+
+// Clear all recordings
+recorder.clear();
+
+// Destroy recorder and clean up
+recorder.destroy();</code>
+      </div>
+    </section>
+
+    <!-- Advanced Configuration -->
+    <section class="docs-card">
+      <div class="card-header">
+        <div class="card-icon">⚙️</div>
+        <div>
+          <h2 class="card-title">Advanced Configuration</h2>
+          <p class="card-subtitle">Dynamic settings and quality control</p>
+        </div>
+      </div>
+      
+      <h3>Runtime Configuration</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">// Update settings during runtime
+recorder.updateConfig({
+  chunkDuration: 3000,              // Change chunk size
+  overlapDuration: 300,             // Adjust overlap
+  mimeType: 'audio/ogg',            // Switch format
+});
+
+// Get current configuration
+const config = recorder.getConfig();
+console.log('Current settings:', config);
+
+// Audio quality presets
+recorder.setQualityPreset('high');    // 2s chunks, 200ms overlap
+recorder.setQualityPreset('normal');  // 5s chunks, 500ms overlap
+recorder.setQualityPreset('economy'); // 10s chunks, 1s overlap
+
+// Custom audio constraints
+recorder.setAudioConstraints({
+  channelCount: 2,                  // Stereo recording
+  sampleRate: 48000,                // High sample rate
+  echoCancellation: true,           // Enable echo cancellation
+  noiseSuppression: true,           // Enable noise reduction
+  autoGainControl: false            // Disable AGC
+});</code>
+      </div>
+      
+      <h3>MIME Type Detection and Selection</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">// Check supported formats
+const supportedTypes = recorder.getSupportedMimeTypes();
+console.log('Supported formats:', supportedTypes);
+// Output: ['audio/webm;codecs=opus', 'audio/ogg;codecs=opus', 'audio/webm']
+
+// Auto-select best format
+const bestFormat = recorder.getBestMimeType();
+console.log('Best format:', bestFormat);
+
+// Check if specific format is supported
+if (recorder.isMimeTypeSupported('audio/webm;codecs=opus')) {
+  recorder.setMimeType('audio/webm;codecs=opus');
+}
+
+// Format priority list
+recorder.setMimeTypePriority([
+  'audio/ogg;codecs=opus',    // Prefer Ogg Opus
+  'audio/webm;codecs=opus',   // Then WebM Opus
+  'audio/webm',               // Finally WebM
+  'audio/mp4'                 // Fallback to MP4
+]);</code>
+      </div>
+    </section>
+
+    <!-- Event System -->
+    <section class="docs-card">
+      <div class="card-header">
+        <div class="card-icon">📡</div>
+        <div>
+          <h2 class="card-title">Event System</h2>
+          <p class="card-subtitle">React to recording events and state changes</p>
+        </div>
+      </div>
+      
+      <h3>Event Listeners</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">// Recording lifecycle events
+recorder.on('recording-started', (event) => {
+  console.log('Started:', event.sessionId, event.timestamp);
+  updateUI('recording');
+});
+
+recorder.on('recording-stopped', (event) => {
+  console.log('Stopped:', event.sessionId, event.duration, event.chunkCount);
+  updateUI('stopped');
+});
+
+recorder.on('recording-paused', (event) => {
+  console.log('Paused at:', event.timestamp);
+  updateUI('paused');
+});
+
+recorder.on('recording-resumed', (event) => {
+  console.log('Resumed at:', event.timestamp);
+  updateUI('recording');
+});
+
+// Chunk events
+recorder.on('chunk-started', (event) => {
+  console.log('Chunk', event.chunkIndex, 'started');
+});
+
+recorder.on('chunk-ready', (event) => {
+  console.log('Chunk', event.chunkIndex, 'ready:', event.blob.size, 'bytes');
+  
+  // Access the audio blob
+  const audioBlob = event.blob;
+  
+  // Get chunk metadata
+  const metadata = event.metadata;
+  console.log('Duration:', metadata.duration);
+  console.log('MIME type:', metadata.mimeType);
+  console.log('Timestamp:', metadata.timestamp);
+});
+
+// Storage events
+recorder.on('chunk-saved', (event) => {
+  console.log('Chunk saved to IndexedDB:', event.chunkId);
+});
+
+recorder.on('session-saved', (event) => {
+  console.log('Session saved:', event.sessionId);
+});
+
+// Error events
+recorder.on('error', (event) => {
+  console.error('Recording error:', event.error);
+  handleRecordingError(event.error);
+});
+
+recorder.on('permission-denied', (event) => {
+  console.error('Microphone permission denied');
+  showPermissionDialog();
+});
+
+recorder.on('device-unavailable', (event) => {
+  console.error('No audio input device available');
+  showDeviceDialog();
+});</code>
+      </div>
+      
+      <h3>Remove Event Listeners</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">// Remove specific listener
+const chunkHandler = (event) => console.log('Chunk ready:', event.chunkIndex);
+recorder.on('chunk-ready', chunkHandler);
+recorder.off('chunk-ready', chunkHandler);
+
+// Remove all listeners for an event
+recorder.off('chunk-ready');
+
+// Remove all listeners
+recorder.removeAllListeners();</code>
+      </div>
+    </section>
+
+    <!-- Data Access -->
+    <section class="docs-card">
+      <div class="card-header">
+        <div class="card-icon">💾</div>
+        <div>
+          <h2 class="card-title">Data Access & Management</h2>
+          <p class="card-subtitle">Access recordings, metadata, and storage</p>
+        </div>
+      </div>
+      
+      <h3>Recording Data</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">// Get all chunks from current session
+const chunks = recorder.getChunks();
+console.log('Total chunks:', chunks.length);
+
+chunks.forEach((chunk, index) => {
+  console.log(`Chunk ${index}:`, {
+    size: chunk.blob.size,
+    type: chunk.blob.type,
+    duration: chunk.duration,
+    timestamp: chunk.timestamp
+  });
+});
+
+// Get combined audio blob
+const combinedBlob = await recorder.getCombinedBlob();
+console.log('Combined audio:', combinedBlob.size, 'bytes');
+
+// Download combined recording
+recorder.downloadRecording('my-recording.webm');
+
+// Get recording as data URL
+const dataUrl = await recorder.getDataURL();
+console.log('Data URL length:', dataUrl.length);
+
+// Get recording as array buffer
+const arrayBuffer = await recorder.getArrayBuffer();
+console.log('Array buffer size:', arrayBuffer.byteLength);</code>
+      </div>
+      
+      <h3>Session Management</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">// Get current session
+const session = recorder.getCurrentSession();
+if (session) {
+  console.log('Session details:', {
+    id: session.id,
+    startTime: session.startTime,
+    duration: session.duration,
+    chunkCount: session.chunkCount,
+    totalSize: session.totalSize,
+    settings: session.settings
+  });
+}
+
+// Get all sessions from storage
+const allSessions = await recorder.getAllSessions();
+console.log('Total sessions:', allSessions.length);
+
+// Load a specific session
+const sessionId = 'session_2023-10-25_14-30-15';
+const loadedSession = await recorder.loadSession(sessionId);
+console.log('Loaded session:', loadedSession.chunkCount, 'chunks');
+
+// Delete a session
+await recorder.deleteSession(sessionId);
+
+// Export session data
+const sessionData = await recorder.exportSession(sessionId);
+console.log('Exported:', sessionData);
+
+// Import session data
+await recorder.importSession(sessionData);</code>
+      </div>
+      
+      <h3>Storage Information</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">// Get storage usage
+const usage = await recorder.getStorageUsage();
+console.log('Storage usage:', {
+  used: usage.used,
+  available: usage.available,
+  percentage: usage.percentage,
+  usedMB: usage.usedMB,
+  availableMB: usage.availableMB
+});
+
+// Check if storage is available
+if (recorder.isStorageAvailable()) {
+  console.log('IndexedDB storage is available');
+} else {
+  console.log('Storage not available, using memory only');
+}
+
+// Clear all storage
+await recorder.clearStorage();
+
+// Cleanup old sessions (keep last 10)
+const deletedCount = await recorder.cleanupStorage(10);
+console.log('Deleted', deletedCount, 'old sessions');</code>
+      </div>
+    </section>
+
+    <!-- Real-time Analysis -->
+    <section class="docs-card">
+      <div class="card-header">
+        <div class="card-icon">📊</div>
+        <div>
+          <h2 class="card-title">Real-time Analysis</h2>
+          <p class="card-subtitle">Audio level monitoring and waveform data</p>
+        </div>
+      </div>
+      
+      <h3>Audio Level Monitoring</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">// Enable real-time audio level monitoring
+recorder.enableLevelMonitoring({
+  updateInterval: 50,              // Update every 50ms
+  smoothing: 0.8                   // Smoothing factor (0-1)
+});
+
+// Listen for audio level updates
+recorder.on('audio-level', (event) => {
+  const level = event.level;       // 0-100 audio level
+  const peak = event.peak;         // Peak level
+  const rms = event.rms;           // RMS level
+  
+  // Update level meter UI
+  updateLevelMeter(level);
+  
+  // Detect silence
+  if (level < 5) {
+    console.log('Silence detected');
+  }
+});
+
+// Voice activity detection
+recorder.enableVoiceDetection({
+  threshold: 10,                   // Voice threshold
+  minDuration: 500,                // Minimum voice duration
+  maxPause: 1000                   // Maximum pause length
+});
+
+recorder.on('voice-started', () => {
+  console.log('Voice activity started');
+});
+
+recorder.on('voice-stopped', () => {
+  console.log('Voice activity stopped');
+});
+
+// Disable monitoring
+recorder.disableLevelMonitoring();</code>
+      </div>
+      
+      <h3>Waveform Data Access</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">// Get waveform data for a chunk
+recorder.on('chunk-ready', async (event) => {
+  const waveformData = await recorder.getWaveformData(event.blob, {
+    bars: 100,                     // Number of bars
+    normalize: true                // Normalize to 0-1
+  });
+  
+  console.log('Waveform data:', waveformData);
+  // Array of 100 values from 0-1
+  
+  // Draw custom waveform
+  drawWaveform(waveformData);
+});
+
+// Get frequency spectrum data
+const spectrumData = await recorder.getSpectrumData(audioBlob, {
+  fftSize: 1024,                   // FFT size
+  frequencyBins: 50                // Number of frequency bins
+});
+
+console.log('Spectrum data:', spectrumData);
+
+// Custom waveform drawing function
+function drawWaveform(data) {
+  const canvas = document.getElementById('waveform-canvas');
+  const ctx = canvas.getContext('2d');
+  const width = canvas.width;
+  const height = canvas.height;
+  
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = '#35e0ff';
+  
+  const barWidth = width / data.length;
+  
+  data.forEach((value, index) => {
+    const barHeight = value * height;
+    const x = index * barWidth;
+    const y = (height - barHeight) / 2;
+    
+    ctx.fillRect(x, y, barWidth - 1, barHeight);
+  });
+}</code>
+      </div>
+    </section>
+
+    <!-- Complete Example -->
+    <section class="docs-card">
+      <div class="card-header">
+        <div class="card-icon">🎯</div>
+        <div>
+          <h2 class="card-title">Complete Example</h2>
+          <p class="card-subtitle">Full-featured application using the JavaScript API</p>
+        </div>
+      </div>
+      
+      <p>Here's a complete example showing advanced usage of the SAI Recorder API:</p>
+      
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">class AdvancedRecorderApp {
+  constructor() {
+    this.recorder = null;
+    this.currentSession = null;
+    this.isVoiceActive = false;
+    this.silenceTimer = null;
+    
+    this.init();
+  }
+  
+  async init() {
+    // Initialize recorder with advanced configuration
+    this.recorder = new SAIRecorder({
+      startButton: '#record-btn',
+      stopButton: '#stop-btn',
+      container: '#recordings',
+      
+      // High-quality settings
+      chunkDuration: 3000,
+      overlapDuration: 300,
+      mimeType: 'audio/webm;codecs=opus',
+      enableStorage: true,
+      enableWaveforms: true,
+      
+      // Audio constraints for best quality
+      audioConstraints: {
+        channelCount: 1,
+        sampleRate: 48000,
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: false
+      },
+      
+      // Callbacks
+      onRecordingStart: (session) => this.onRecordingStart(session),
+      onChunkReady: (chunk, index) => this.onChunkReady(chunk, index),
+      onRecordingStop: (session) => this.onRecordingStop(session),
+      onError: (error) => this.onError(error)
+    });
+    
+    // Setup event listeners
+    this.setupEventListeners();
+    
+    // Enable real-time monitoring
+    this.setupAudioMonitoring();
+    
+    // Load previous sessions
+    await this.loadPreviousSessions();
+    
+    // Update storage info
+    this.updateStorageInfo();
+  }
+  
+  setupEventListeners() {
+    // Recording events
+    this.recorder.on('recording-started', (event) => {
+      this.updateUI('recording');
+      this.logEvent('Recording started', event);
+    });
+    
+    this.recorder.on('recording-stopped', (event) => {
+      this.updateUI('stopped');
+      this.logEvent('Recording stopped', event);
+      this.showRecordingSummary(event);
+    });
+    
+    // Chunk events with processing
+    this.recorder.on('chunk-ready', async (event) => {
+      await this.processChunk(event);
+    });
+    
+    // Error handling
+    this.recorder.on('error', (event) => {
+      this.showError('Recording error: ' + event.error.message);
+    });
+    
+    this.recorder.on('permission-denied', () => {
+      this.showError('Microphone permission denied. Please enable and refresh.');
+    });
+  }
+  
+  setupAudioMonitoring() {
+    // Enable level monitoring
+    this.recorder.enableLevelMonitoring({
+      updateInterval: 50,
+      smoothing: 0.8
+    });
+    
+    // Audio level visualization
+    this.recorder.on('audio-level', (event) => {
+      this.updateLevelMeter(event.level);
+      this.detectSilence(event.level);
+    });
+    
+    // Voice activity detection
+    this.recorder.enableVoiceDetection({
+      threshold: 15,
+      minDuration: 500,
+      maxPause: 2000
+    });
+    
+    this.recorder.on('voice-started', () => {
+      this.isVoiceActive = true;
+      this.clearSilenceTimer();
+      this.updateVoiceIndicator(true);
+    });
+    
+    this.recorder.on('voice-stopped', () => {
+      this.isVoiceActive = false;
+      this.updateVoiceIndicator(false);
+      this.startSilenceTimer();
+    });
+  }
+  
+  async onRecordingStart(session) {
+    this.currentSession = session;
+    this.logEvent('Session started', session.id);
+    
+    // Auto-save session metadata
+    await this.saveSessionMetadata(session);
+  }
+  
+  async onChunkReady(chunk, index) {
+    this.logEvent('Chunk ready', `${index}: ${chunk.blob.size} bytes`);
+    
+    // Process chunk in background
+    this.processChunkAsync(chunk, index);
+  }
+  
+  async onRecordingStop(session) {
+    this.logEvent('Session completed', `${session.chunkCount} chunks, ${session.duration}s`);
+    
+    // Finalize session
+    await this.finalizeSession(session);
+    
+    // Auto-export if configured
+    if (this.shouldAutoExport()) {
+      await this.exportSession(session.id);
+    }
+  }
+  
+  async processChunk(event) {
+    const { blob, index, metadata } = event;
+    
+    // Generate waveform
+    const waveformData = await this.recorder.getWaveformData(blob, {
+      bars: 120,
+      normalize: true
+    });
+    
+    // Update chunk display with waveform
+    this.updateChunkDisplay(index, blob, waveformData);
+    
+    // Optional: Analyze audio content
+    await this.analyzeAudioContent(blob);
+  }
+  
+  detectSilence(level) {
+    const SILENCE_THRESHOLD = 5;
+    const SILENCE_DURATION = 3000; // 3 seconds
+    
+    if (level < SILENCE_THRESHOLD && this.recorder.isRecording()) {
+      if (!this.silenceTimer) {
+        this.silenceTimer = setTimeout(() => {
+          this.showSilenceWarning();
+        }, SILENCE_DURATION);
+      }
+    } else {
+      this.clearSilenceTimer();
+    }
+  }
+  
+  clearSilenceTimer() {
+    if (this.silenceTimer) {
+      clearTimeout(this.silenceTimer);
+      this.silenceTimer = null;
+    }
+  }
+  
+  async exportSession(sessionId) {
+    try {
+      const combinedBlob = await this.recorder.getCombinedBlob(sessionId);
+      const filename = `recording-${new Date().toISOString().slice(0, 19)}.webm`;
+      
+      this.recorder.downloadRecording(filename, combinedBlob);
+      this.logEvent('Export completed', filename);
+      
+    } catch (error) {
+      this.showError('Export failed: ' + error.message);
+    }
+  }
+  
+  // UI update methods
+  updateUI(state) {
+    const recordBtn = document.getElementById('record-btn');
+    const stopBtn = document.getElementById('stop-btn');
+    const statusIndicator = document.getElementById('status');
+    
+    switch (state) {
+      case 'recording':
+        recordBtn.disabled = true;
+        stopBtn.disabled = false;
+        statusIndicator.className = 'status recording';
+        statusIndicator.textContent = 'Recording...';
+        break;
+        
+      case 'stopped':
+        recordBtn.disabled = false;
+        stopBtn.disabled = true;
+        statusIndicator.className = 'status ready';
+        statusIndicator.textContent = 'Ready';
+        break;
+    }
+  }
+  
+  updateLevelMeter(level) {
+    const meter = document.getElementById('level-meter');
+    if (meter) {
+      meter.style.width = level + '%';
+      meter.style.backgroundColor = level > 70 ? '#ff4444' : 
+                                   level > 30 ? '#ffaa00' : '#44ff44';
+    }
+  }
+  
+  updateVoiceIndicator(active) {
+    const indicator = document.getElementById('voice-indicator');
+    if (indicator) {
+      indicator.className = active ? 'voice-active' : 'voice-inactive';
+      indicator.textContent = active ? '🗣️ Speaking' : '🤫 Silent';
+    }
+  }
+  
+  // Utility methods
+  logEvent(type, details) {
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] ${type}:`, details);
+    
+    // Add to log display
+    const logContainer = document.getElementById('event-log');
+    if (logContainer) {
+      const entry = document.createElement('div');
+      entry.textContent = `${timestamp} - ${type}: ${JSON.stringify(details)}`;
+      logContainer.appendChild(entry);
+      logContainer.scrollTop = logContainer.scrollHeight;
+    }
+  }
+  
+  showError(message) {
+    console.error(message);
+    alert(message); // Replace with better UI
+  }
+  
+  shouldAutoExport() {
+    return document.getElementById('auto-export-checkbox')?.checked || false;
+  }
+}
+
+// Initialize the advanced recorder app
+document.addEventListener('DOMContentLoaded', () => {
+  const app = new AdvancedRecorderApp();
+  window.recorderApp = app; // Make globally accessible for debugging
+});</code>
+      </div>
+      
+      <div class="demo-area">
+        <div class="demo-header">
+          <div class="demo-title">HTML Structure for Complete Example</div>
+          <div class="demo-badge">Required HTML</div>
+        </div>
+        
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">HTML</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <code class="code-content">&lt;div class="advanced-recorder"&gt;
+  &lt;div class="recorder-controls"&gt;
+    &lt;button id="record-btn" class="btn btn-primary"&gt;🎙 Record&lt;/button&gt;
+    &lt;button id="stop-btn" class="btn" disabled&gt;⏹ Stop&lt;/button&gt;
+    &lt;div id="status" class="status ready"&gt;Ready&lt;/div&gt;
+  &lt;/div&gt;
+  
+  &lt;div class="audio-monitoring"&gt;
+    &lt;div class="level-meter-container"&gt;
+      &lt;label&gt;Audio Level:&lt;/label&gt;
+      &lt;div class="level-meter-track"&gt;
+        &lt;div id="level-meter" class="level-meter-bar"&gt;&lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div id="voice-indicator" class="voice-indicator"&gt;🤫 Silent&lt;/div&gt;
+  &lt;/div&gt;
+  
+  &lt;div class="recorder-options"&gt;
+    &lt;label&gt;
+      &lt;input type="checkbox" id="auto-export-checkbox"&gt;
+      Auto-export recordings
+    &lt;/label&gt;
+  &lt;/div&gt;
+  
+  &lt;div id="recordings" class="recordings-container"&gt;&lt;/div&gt;
+  
+  &lt;div class="event-log-container"&gt;
+    &lt;h4&gt;Event Log&lt;/h4&gt;
+    &lt;div id="event-log" class="event-log"&gt;&lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</code>
+        </div>
+      </div>
+    </section>
+
+    <!-- API Reference Quick Links -->
+    <section class="docs-card">
+      <div class="card-header">
+        <div class="card-icon">📚</div>
+        <div>
+          <h2 class="card-title">API Reference Quick Links</h2>
+          <p class="card-subtitle">Jump to specific API documentation sections</p>
+        </div>
+      </div>
+      
+      <div class="feature-grid">
+        <a href="../index.html#api-reference" class="feature-card" style="text-decoration: none; color: inherit;">
+          <div class="feature-icon">🏗️</div>
+          <h3 class="feature-title">Constructor Options</h3>
+          <p class="feature-desc">All initialization parameters</p>
+        </a>
+        
+        <a href="../index.html#api-reference" class="feature-card" style="text-decoration: none; color: inherit;">
+          <div class="feature-icon">⚡</div>
+          <h3 class="feature-title">Methods</h3>
+          <p class="feature-desc">Complete method reference</p>
+        </a>
+        
+        <a href="../index.html#api-reference" class="feature-card" style="text-decoration: none; color: inherit;">
+          <div class="feature-icon">📡</div>
+          <h3 class="feature-title">Events</h3>
+          <p class="feature-desc">All available events and data</p>
+        </a>
+        
+        <a href="../index.html#api-reference" class="feature-card" style="text-decoration: none; color: inherit;">
+          <div class="feature-icon">🔧</div>
+          <h3 class="feature-title">Configuration</h3>
+          <p class="feature-desc">Settings and options</p>
+        </a>
+      </div>
+    </section>
+
+  </div>
+
+  <script>
+    // Copy code functionality
+    function copyCode(button) {
+      const codeBlock = button.closest('.code-block');
+      const code = codeBlock.querySelector('.code-content').textContent;
+      
+      navigator.clipboard.writeText(code).then(() => {
+        const originalText = button.textContent;
+        button.textContent = 'Copied!';
+        button.style.background = 'rgba(59,227,138,0.2)';
+        
+        setTimeout(() => {
+          button.textContent = originalText;
+          button.style.background = '';
+        }, 2000);
+      }).catch(err => {
+        console.error('Copy failed:', err);
+        button.textContent = 'Copy failed';
+        setTimeout(() => {
+          button.textContent = 'Copy';
+        }, 2000);
+      });
+    }
+  </script>
+</body>
+</html>

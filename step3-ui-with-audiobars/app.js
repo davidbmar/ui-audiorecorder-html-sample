@@ -68,6 +68,10 @@
   var preferredMime = null;
   var startedAt = null;
   var timerId = null;
+  var chunkStartTimes = []; // Track start time of each chunk
+  var liveWaveformCanvas = null;
+  var liveAnalyser = null;
+  var liveAnimationId = null;
 
   // Prefer Ogg/Opus if available, then WebM/Opus.
   function chooseMime(){
@@ -209,7 +213,18 @@
     
     var meta = document.createElement('div'); 
     meta.className = 'meta';
-    meta.textContent = 'seg-' + pad3(idx) + ' (' + (blob.type || 'audio') + ')';
+    
+    // Calculate time range for this chunk
+    var chunkStartTime = chunkStartTimes[idx - 1] || 0;
+    var chunkEndTime = Date.now();
+    var startOffset = chunkStartTime ? ((chunkStartTime - startedAt) / 1000) : 0;
+    var endOffset = (chunkEndTime - startedAt) / 1000;
+    var startTimeStr = fmt(startOffset);
+    var endTimeStr = fmt(endOffset);
+    
+    meta.innerHTML = 'seg-' + pad3(idx) + ' (' + (blob.type || 'audio') + ')<br>' +
+                     '<span style="color:var(--accent);font-size:11px;">' + 
+                     startTimeStr + ' → ' + endTimeStr + ' (' + Math.round(blob.size / 1024) + 'KB)</span>';
 
     var audioEl = document.createElement('audio');
     var localUrl = URL.createObjectURL(blob);
@@ -218,7 +233,8 @@
     audioEl.src = localUrl;
     audioEl.className = 'chunk-audio';
     audioEl.addEventListener('loadedmetadata', function(){
-      log('seg-' + pad3(idx) + ' loadedmetadata duration=' + (audioEl.duration || 0));
+      log('seg-' + pad3(idx) + ' loadedmetadata duration=' + (audioEl.duration || 0) + 
+          ' time range: ' + startTimeStr + ' → ' + endTimeStr);
     });
 
     top.appendChild(meta); 
@@ -233,7 +249,13 @@
 
     row.appendChild(top);
     row.appendChild(shell);
-    list.appendChild(row);
+    
+    // Insert at the beginning (most recent on top)
+    if (list.firstChild) {
+      list.insertBefore(row, list.firstChild);
+    } else {
+      list.appendChild(row);
+    }
 
     renderWaveform(canvas, audioEl, blob);
   }
@@ -260,6 +282,89 @@
     setTimeout(function(){ try { rec.stop(); } catch(_){ /* ignore */ } }, ms);
   }
 
+  // ---------- live waveform ----------
+  function setupLiveWaveform(stream) {
+    // Create Web Audio API context and analyser
+    if (!decodeCtx) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      decodeCtx = new AC();
+    }
+    
+    var source = decodeCtx.createMediaStreamSource(stream);
+    liveAnalyser = decodeCtx.createAnalyser();
+    liveAnalyser.fftSize = 256;
+    liveAnalyser.smoothingTimeConstant = 0.8;
+    source.connect(liveAnalyser);
+    
+    // Create canvas for live waveform in recorder card
+    var recorderCard = $('recorder-card');
+    var existingCanvas = recorderCard.querySelector('.live-waveform');
+    if (existingCanvas) existingCanvas.remove();
+    
+    liveWaveformCanvas = document.createElement('canvas');
+    liveWaveformCanvas.className = 'live-waveform';
+    liveWaveformCanvas.style.cssText = 'width:100%;height:60px;border-radius:8px;background:rgba(255,255,255,0.03);';
+    
+    var statusDiv = recorderCard.querySelector('.recorder-header div:last-child');
+    statusDiv.appendChild(liveWaveformCanvas);
+    
+    startLiveWaveform();
+  }
+  
+  function startLiveWaveform() {
+    if (!liveAnalyser || !liveWaveformCanvas) return;
+    
+    var ctx = liveWaveformCanvas.getContext('2d');
+    var bufferLength = liveAnalyser.frequencyBinCount;
+    var dataArray = new Uint8Array(bufferLength);
+    
+    function drawLiveWaveform() {
+      if (!running) return;
+      
+      liveAnimationId = requestAnimationFrame(drawLiveWaveform);
+      
+      liveAnalyser.getByteFrequencyData(dataArray);
+      
+      var size = getCanvasSize(liveWaveformCanvas);
+      var W = size.W, H = size.H;
+      
+      ctx.clearRect(0, 0, W, H);
+      
+      // Draw frequency bars
+      var barWidth = W / bufferLength * 2;
+      var barHeight;
+      var x = 0;
+      
+      for (var i = 0; i < bufferLength; i++) {
+        barHeight = (dataArray[i] / 255) * H * 0.8;
+        
+        // Gradient from accent to good color
+        var gradient = ctx.createLinearGradient(0, H, 0, H - barHeight);
+        gradient.addColorStop(0, '#35e0ff');
+        gradient.addColorStop(1, '#3be38a');
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(x, H - barHeight, barWidth, barHeight);
+        
+        x += barWidth + 1;
+      }
+    }
+    
+    drawLiveWaveform();
+  }
+  
+  function stopLiveWaveform() {
+    if (liveAnimationId) {
+      cancelAnimationFrame(liveAnimationId);
+      liveAnimationId = null;
+    }
+    if (liveWaveformCanvas) {
+      liveWaveformCanvas.remove();
+      liveWaveformCanvas = null;
+    }
+    liveAnalyser = null;
+  }
+
   // ---------- start/stop ----------
   function start(){
     if (running) return;
@@ -282,10 +387,16 @@
 
       // Start UI timer
       startUI();
+      
+      // Setup live waveform visualization
+      setupLiveWaveform(stream);
 
       var loop = function(){
         if (!running) return;
         var idx = ++chunkIndex;
+        var chunkStartTime = Date.now();
+        chunkStartTimes[idx - 1] = chunkStartTime;
+        
         recordOneChunk(mediaStream, SLICE_MS, preferredMime, function(blob){
           log('Got chunk', idx, (blob.type||'audio/*'), (blob.size||0) + 'B');
           renderChunk(blob, idx);
@@ -311,6 +422,9 @@
     palStop.classList.add('hidden');
     log('Stopped');
     
+    // Stop live waveform
+    stopLiveWaveform();
+    
     // Stop UI timer
     stopUI();
   }
@@ -318,6 +432,7 @@
   function clearList(){
     list.innerHTML = '';
     chunkIndex = 0;
+    chunkStartTimes = [];
     log('Cleared');
   }
 
@@ -325,7 +440,8 @@
   function tick(){
     if(!startedAt) return;
     const secs = (Date.now()-startedAt)/1000|0;
-    elapsedEl.textContent = fmt(secs);
+    const chunkText = chunkIndex > 0 ? ` • ${chunkIndex} chunks` : '';
+    elapsedEl.textContent = fmt(secs) + chunkText;
   }
 
   function startUI(){

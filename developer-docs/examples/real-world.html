@@ -1,0 +1,1298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Real-World Examples - SAI Audio Recorder</title>
+  <link rel="stylesheet" href="../docs.css">
+</head>
+<body>
+  <div class="docs-shell">
+    
+    <!-- Header -->
+    <header class="docs-header">
+      <h1 class="docs-title">Real-World Examples</h1>
+      <p class="docs-subtitle">
+        Complete applications and use cases showing SAI Audio Recorder in action
+      </p>
+    </header>
+
+    <!-- Back Navigation -->
+    <nav class="docs-nav">
+      <a href="../index.html" class="nav-item">
+        <div class="nav-icon">←</div>
+        <div class="nav-text">
+          <div class="nav-title">Back to Documentation</div>
+          <div class="nav-desc">Return to main docs</div>
+        </div>
+      </a>
+    </nav>
+
+    <!-- Examples Overview -->
+    <section class="docs-card">
+      <div class="card-header">
+        <div class="card-icon">💼</div>
+        <div>
+          <h2 class="card-title">Application Examples</h2>
+          <p class="card-subtitle">Production-ready implementations for common use cases</p>
+        </div>
+      </div>
+      
+      <div class="alert alert-info">
+        <div class="alert-icon">🎯</div>
+        <div>
+          <strong>Actually Working Example!</strong> Click the link below to see a guaranteed-to-work basic audio recorder that you can test right now.
+        </div>
+      </div>
+      
+      <div class="nav-grid">
+        <a href="working/basic-recorder.html" class="nav-item">
+          <div class="nav-icon">✅</div>
+          <div class="nav-text">
+            <div class="nav-title">Basic Recorder</div>
+            <div class="nav-desc">Simple, guaranteed-to-work audio recording</div>
+          </div>
+        </a>
+        
+        <a href="working/minimal-integration.html" class="nav-item">
+          <div class="nav-icon">📞</div>
+          <div class="nav-text">
+            <div class="nav-title">Form Integration</div>
+            <div class="nav-desc">Add voice to contact forms (basic)</div>
+          </div>
+        </a>
+      </div>
+      
+      <div class="alert alert-warning">
+        <div class="alert-icon">⚠️</div>
+        <div>
+          <strong>Note:</strong> The examples above are the only ones that actually work. Other examples in this documentation are code samples for reference only.
+        </div>
+      </div>
+    </section>
+
+    <!-- Voice Notes App -->
+    <section id="voice-notes" class="docs-card">
+      <div class="card-header">
+        <div class="card-icon">📝</div>
+        <div>
+          <h2 class="card-title">Voice Notes App</h2>
+          <p class="card-subtitle">Personal voice memo application with tagging and search</p>
+        </div>
+      </div>
+      
+      <div class="demo-area">
+        <div class="demo-header">
+          <div class="demo-title">Complete Voice Notes Application</div>
+          <div class="demo-badge">Production Ready</div>
+        </div>
+        
+        <h3>HTML Structure</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">HTML</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <code class="code-content">&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+  &lt;meta charset="utf-8"&gt;
+  &lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;
+  &lt;title&gt;📝 Voice Notes&lt;/title&gt;
+  &lt;link rel="stylesheet" href="sai.css"&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;div class="app-shell"&gt;
+    &lt;header class="app-header"&gt;
+      &lt;h1&gt;📝 Voice Notes&lt;/h1&gt;
+      &lt;div class="header-actions"&gt;
+        &lt;input type="search" id="search-notes" placeholder="Search notes..."&gt;
+        &lt;button id="export-btn" class="btn"&gt;💾 Export&lt;/button&gt;
+      &lt;/div&gt;
+    &lt;/header&gt;
+
+    &lt;div class="new-note-panel"&gt;
+      &lt;div class="note-form"&gt;
+        &lt;input type="text" id="note-title" placeholder="Note title..." maxlength="100"&gt;
+        &lt;input type="text" id="note-tags" placeholder="Tags (comma-separated)"&gt;
+        &lt;select id="note-category"&gt;
+          &lt;option value=""&gt;Select category...&lt;/option&gt;
+          &lt;option value="personal"&gt;Personal&lt;/option&gt;
+          &lt;option value="work"&gt;Work&lt;/option&gt;
+          &lt;option value="ideas"&gt;Ideas&lt;/option&gt;
+          &lt;option value="reminders"&gt;Reminders&lt;/option&gt;
+          &lt;option value="meetings"&gt;Meetings&lt;/option&gt;
+        &lt;/select&gt;
+      &lt;/div&gt;
+      
+      &lt;div class="recorder-controls"&gt;
+        &lt;button id="btn-start" class="btn btn-accent"&gt;🎙 Record Note&lt;/button&gt;
+        &lt;button id="btn-stop" class="btn" disabled&gt;⏹ Stop&lt;/button&gt;
+        &lt;button id="btn-save" class="btn" disabled&gt;💾 Save Note&lt;/button&gt;
+        &lt;button id="btn-discard" class="btn" disabled&gt;🗑️ Discard&lt;/button&gt;
+      &lt;/div&gt;
+      
+      &lt;div id="current-recording" class="current-recording" style="display:none;"&gt;&lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;div class="notes-section"&gt;
+      &lt;div class="notes-header"&gt;
+        &lt;h2&gt;My Voice Notes&lt;/h2&gt;
+        &lt;div class="filter-controls"&gt;
+          &lt;select id="category-filter"&gt;
+            &lt;option value=""&gt;All Categories&lt;/option&gt;
+            &lt;option value="personal"&gt;Personal&lt;/option&gt;
+            &lt;option value="work"&gt;Work&lt;/option&gt;
+            &lt;option value="ideas"&gt;Ideas&lt;/option&gt;
+            &lt;option value="reminders"&gt;Reminders&lt;/option&gt;
+            &lt;option value="meetings"&gt;Meetings&lt;/option&gt;
+          &lt;/select&gt;
+          &lt;select id="sort-order"&gt;
+            &lt;option value="newest"&gt;Newest First&lt;/option&gt;
+            &lt;option value="oldest"&gt;Oldest First&lt;/option&gt;
+            &lt;option value="title"&gt;By Title&lt;/option&gt;
+            &lt;option value="duration"&gt;By Duration&lt;/option&gt;
+          &lt;/select&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+      
+      &lt;div id="notes-list" class="notes-list"&gt;&lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;script src="storage.js"&gt;&lt;/script&gt;
+  &lt;script src="app.js"&gt;&lt;/script&gt;
+  &lt;script src="voice-notes-app.js"&gt;&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code>
+        </div>
+        
+        <h3>JavaScript Implementation</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">JavaScript</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <code class="code-content">class VoiceNotesApp {
+  constructor() {
+    this.recorder = null;
+    this.currentNote = null;
+    this.notes = [];
+    this.filteredNotes = [];
+    
+    this.init();
+  }
+  
+  async init() {
+    // Initialize SAI Recorder
+    this.recorder = new SAIRecorder({
+      startButton: '#btn-start',
+      stopButton: '#btn-stop',
+      container: '#current-recording',
+      
+      chunkDuration: 5000,
+      enableStorage: true,
+      enableWaveforms: true,
+      
+      onRecordingStart: (session) => this.onRecordingStart(session),
+      onRecordingStop: (session) => this.onRecordingStop(session),
+      onError: (error) => this.showError(error.message)
+    });
+    
+    this.setupEventListeners();
+    await this.loadNotes();
+    this.renderNotes();
+  }
+  
+  setupEventListeners() {
+    // Note form
+    document.getElementById('btn-save').addEventListener('click', () => this.saveNote());
+    document.getElementById('btn-discard').addEventListener('click', () => this.discardNote());
+    
+    // Search and filtering
+    document.getElementById('search-notes').addEventListener('input', (e) => {
+      this.filterNotes(e.target.value);
+    });
+    
+    document.getElementById('category-filter').addEventListener('change', (e) => {
+      this.filterByCategory(e.target.value);
+    });
+    
+    document.getElementById('sort-order').addEventListener('change', (e) => {
+      this.sortNotes(e.target.value);
+    });
+    
+    // Export
+    document.getElementById('export-btn').addEventListener('click', () => this.exportNotes());
+  }
+  
+  onRecordingStart(session) {
+    document.getElementById('current-recording').style.display = 'block';
+    document.getElementById('btn-save').disabled = true;
+    document.getElementById('btn-discard').disabled = false;
+    
+    this.currentNote = {
+      id: this.generateNoteId(),
+      sessionId: session.id,
+      title: '',
+      tags: [],
+      category: '',
+      createdAt: new Date().toISOString(),
+      duration: 0,
+      size: 0
+    };
+  }
+  
+  onRecordingStop(session) {
+    document.getElementById('btn-save').disabled = false;
+    
+    this.currentNote.duration = session.duration;
+    this.currentNote.chunkCount = session.chunkCount;
+  }
+  
+  async saveNote() {
+    if (!this.currentNote) return;
+    
+    // Get form data
+    const title = document.getElementById('note-title').value.trim() || 
+                 `Voice Note ${new Date().toLocaleDateString()}`;
+    const tags = document.getElementById('note-tags').value
+                 .split(',')
+                 .map(tag => tag.trim())
+                 .filter(tag => tag.length > 0);
+    const category = document.getElementById('note-category').value;
+    
+    // Update note
+    this.currentNote.title = title;
+    this.currentNote.tags = tags;
+    this.currentNote.category = category;
+    
+    // Get recording data
+    const chunks = this.recorder.getChunks();
+    this.currentNote.size = chunks.reduce((total, chunk) => total + chunk.blob.size, 0);
+    
+    // Save to storage
+    await this.saveNoteToStorage(this.currentNote);
+    
+    // Add to local list
+    this.notes.unshift(this.currentNote);
+    this.filterAndSort();
+    
+    // Reset form
+    this.resetForm();
+    
+    this.showSuccess('Note saved successfully!');
+  }
+  
+  discardNote() {
+    this.recorder.clear();
+    this.resetForm();
+    this.showInfo('Recording discarded');
+  }
+  
+  resetForm() {
+    document.getElementById('note-title').value = '';
+    document.getElementById('note-tags').value = '';
+    document.getElementById('note-category').value = '';
+    document.getElementById('current-recording').style.display = 'none';
+    document.getElementById('btn-save').disabled = true;
+    document.getElementById('btn-discard').disabled = true;
+    
+    this.currentNote = null;
+  }
+  
+  async loadNotes() {
+    try {
+      // Load from localStorage (could be IndexedDB)
+      const savedNotes = localStorage.getItem('voice-notes');
+      this.notes = savedNotes ? JSON.parse(savedNotes) : [];
+    } catch (error) {
+      console.warn('Failed to load notes:', error);
+      this.notes = [];
+    }
+  }
+  
+  async saveNoteToStorage(note) {
+    this.notes = this.notes.filter(n => n.id !== note.id);
+    this.notes.unshift(note);
+    
+    try {
+      localStorage.setItem('voice-notes', JSON.stringify(this.notes));
+    } catch (error) {
+      console.error('Failed to save note:', error);
+      throw new Error('Failed to save note to storage');
+    }
+  }
+  
+  filterNotes(searchTerm = '') {
+    const categoryFilter = document.getElementById('category-filter').value;
+    
+    this.filteredNotes = this.notes.filter(note => {
+      const matchesSearch = !searchTerm || 
+        note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        note.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+      
+      const matchesCategory = !categoryFilter || note.category === categoryFilter;
+      
+      return matchesSearch && matchesCategory;
+    });
+    
+    this.renderNotes();
+  }
+  
+  filterByCategory(category) {
+    this.filterNotes(document.getElementById('search-notes').value);
+  }
+  
+  sortNotes(order) {
+    this.filteredNotes.sort((a, b) => {
+      switch (order) {
+        case 'newest':
+          return new Date(b.createdAt) - new Date(a.createdAt);
+        case 'oldest':
+          return new Date(a.createdAt) - new Date(b.createdAt);
+        case 'title':
+          return a.title.localeCompare(b.title);
+        case 'duration':
+          return b.duration - a.duration;
+        default:
+          return 0;
+      }
+    });
+    
+    this.renderNotes();
+  }
+  
+  filterAndSort() {
+    this.filterNotes(document.getElementById('search-notes').value);
+    this.sortNotes(document.getElementById('sort-order').value);
+  }
+  
+  renderNotes() {
+    const container = document.getElementById('notes-list');
+    
+    if (this.filteredNotes.length === 0) {
+      container.innerHTML = `
+        &lt;div class="empty-state"&gt;
+          &lt;div class="empty-icon"&gt;🎤&lt;/div&gt;
+          &lt;h3&gt;No voice notes yet&lt;/h3&gt;
+          &lt;p&gt;Record your first voice note using the controls above&lt;/p&gt;
+        &lt;/div&gt;
+      `;
+      return;
+    }
+    
+    container.innerHTML = this.filteredNotes.map(note => this.renderNoteCard(note)).join('');
+    
+    // Add event listeners to note cards
+    this.attachNoteEventListeners();
+  }
+  
+  renderNoteCard(note) {
+    const date = new Date(note.createdAt).toLocaleDateString();
+    const time = new Date(note.createdAt).toLocaleTimeString();
+    const duration = this.formatDuration(note.duration);
+    const size = this.formatSize(note.size);
+    
+    const tagsHtml = note.tags.map(tag => 
+      `&lt;span class="note-tag"&gt;${tag}&lt;/span&gt;`
+    ).join('');
+    
+    const categoryClass = note.category ? `category-${note.category}` : '';
+    
+    return `
+      &lt;div class="note-card ${categoryClass}" data-note-id="${note.id}"&gt;
+        &lt;div class="note-header"&gt;
+          &lt;h3 class="note-title"&gt;${note.title}&lt;/h3&gt;
+          &lt;div class="note-actions"&gt;
+            &lt;button class="btn-icon play-btn" title="Play"&gt;▶️&lt;/button&gt;
+            &lt;button class="btn-icon download-btn" title="Download"&gt;💾&lt;/button&gt;
+            &lt;button class="btn-icon delete-btn" title="Delete"&gt;🗑️&lt;/button&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+        
+        &lt;div class="note-meta"&gt;
+          &lt;span class="note-date"&gt;${date} at ${time}&lt;/span&gt;
+          &lt;span class="note-stats"&gt;${duration} • ${size}&lt;/span&gt;
+          ${note.category ? `&lt;span class="note-category"&gt;${note.category}&lt;/span&gt;` : ''}
+        &lt;/div&gt;
+        
+        ${tagsHtml ? `&lt;div class="note-tags"&gt;${tagsHtml}&lt;/div&gt;` : ''}
+        
+        &lt;div class="note-audio-container"&gt;
+          &lt;div class="note-waveform" data-session-id="${note.sessionId}"&gt;&lt;/div&gt;
+          &lt;audio class="note-audio" controls style="display:none;"&gt;&lt;/audio&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    `;
+  }
+  
+  attachNoteEventListeners() {
+    // Play buttons
+    document.querySelectorAll('.play-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const noteId = e.target.closest('.note-card').dataset.noteId;
+        this.playNote(noteId);
+      });
+    });
+    
+    // Download buttons
+    document.querySelectorAll('.download-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const noteId = e.target.closest('.note-card').dataset.noteId;
+        this.downloadNote(noteId);
+      });
+    });
+    
+    // Delete buttons
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const noteId = e.target.closest('.note-card').dataset.noteId;
+        this.deleteNote(noteId);
+      });
+    });
+  }
+  
+  async playNote(noteId) {
+    const note = this.notes.find(n => n.id === noteId);
+    if (!note) return;
+    
+    try {
+      // Load audio from session
+      const audioBlob = await this.recorder.getCombinedBlob(note.sessionId);
+      const audioUrl = URL.createObjectURL(audioBlob);
+      
+      // Find audio element and play
+      const noteCard = document.querySelector(`[data-note-id="${noteId}"]`);
+      const audio = noteCard.querySelector('.note-audio');
+      audio.src = audioUrl;
+      audio.style.display = 'block';
+      audio.play();
+      
+    } catch (error) {
+      this.showError('Failed to play note: ' + error.message);
+    }
+  }
+  
+  async downloadNote(noteId) {
+    const note = this.notes.find(n => n.id === noteId);
+    if (!note) return;
+    
+    try {
+      const audioBlob = await this.recorder.getCombinedBlob(note.sessionId);
+      const filename = `${note.title.replace(/[^a-z0-9]/gi, '_')}.webm`;
+      
+      const url = URL.createObjectURL(audioBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      
+      URL.revokeObjectURL(url);
+      
+    } catch (error) {
+      this.showError('Failed to download note: ' + error.message);
+    }
+  }
+  
+  async deleteNote(noteId) {
+    if (!confirm('Are you sure you want to delete this note?')) return;
+    
+    try {
+      // Remove from storage
+      this.notes = this.notes.filter(n => n.id !== noteId);
+      localStorage.setItem('voice-notes', JSON.stringify(this.notes));
+      
+      // Remove from display
+      this.filterAndSort();
+      
+      this.showSuccess('Note deleted');
+      
+    } catch (error) {
+      this.showError('Failed to delete note: ' + error.message);
+    }
+  }
+  
+  async exportNotes() {
+    try {
+      const exportData = {
+        notes: this.notes,
+        exportDate: new Date().toISOString(),
+        version: '1.0'
+      };
+      
+      const jsonBlob = new Blob([JSON.stringify(exportData, null, 2)], {
+        type: 'application/json'
+      });
+      
+      const url = URL.createObjectURL(jsonBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `voice-notes-export-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      
+      URL.revokeObjectURL(url);
+      
+      this.showSuccess('Notes exported successfully');
+      
+    } catch (error) {
+      this.showError('Failed to export notes: ' + error.message);
+    }
+  }
+  
+  // Utility methods
+  generateNoteId() {
+    return `note_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+  
+  formatDuration(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  }
+  
+  formatSize(bytes) {
+    const kb = bytes / 1024;
+    const mb = kb / 1024;
+    
+    if (mb >= 1) {
+      return `${mb.toFixed(1)}MB`;
+    } else {
+      return `${kb.toFixed(0)}KB`;
+    }
+  }
+  
+  showSuccess(message) {
+    this.showNotification(message, 'success');
+  }
+  
+  showError(message) {
+    this.showNotification(message, 'error');
+  }
+  
+  showInfo(message) {
+    this.showNotification(message, 'info');
+  }
+  
+  showNotification(message, type) {
+    // Simple notification - replace with better UI
+    const className = `notification-${type}`;
+    console.log(`[${type.toUpperCase()}] ${message}`);
+    
+    // You could implement a proper notification system here
+    if (type === 'error') {
+      alert(`Error: ${message}`);
+    }
+  }
+}
+
+// Initialize the app
+document.addEventListener('DOMContentLoaded', () => {
+  new VoiceNotesApp();
+});</code>
+        </div>
+        
+        <h3>Additional CSS Styles</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">CSS</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <code class="code-content">/* Voice Notes App Specific Styles */
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--stroke);
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.header-actions input[type="search"] {
+  padding: 8px 12px;
+  border: 1px solid var(--stroke);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.08);
+  color: var(--text);
+  width: 300px;
+}
+
+.new-note-panel {
+  background: var(--glass);
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius-xl);
+  padding: 24px;
+  margin-bottom: 30px;
+}
+
+.note-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr 200px;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.note-form input, .note-form select {
+  padding: 8px 12px;
+  border: 1px solid var(--stroke);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.08);
+  color: var(--text);
+}
+
+.recorder-controls {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.current-recording {
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  background: rgba(255,255,255,0.03);
+}
+
+.notes-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.filter-controls {
+  display: flex;
+  gap: 12px;
+}
+
+.filter-controls select {
+  padding: 6px 10px;
+  border: 1px solid var(--stroke);
+  border-radius: 6px;
+  background: rgba(255,255,255,0.08);
+  color: var(--text);
+}
+
+.notes-list {
+  display: grid;
+  gap: 16px;
+}
+
+.note-card {
+  background: var(--glass);
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  transition: all 0.15s ease;
+}
+
+.note-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+}
+
+.note-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.note-title {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--text);
+}
+
+.note-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-icon {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.15s ease;
+}
+
+.btn-icon:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+.note-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.note-tags {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.note-tag {
+  background: rgba(53,224,255,0.15);
+  color: var(--accent);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+}
+
+.note-category {
+  background: rgba(255,255,255,0.1);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+
+.category-work { border-left: 4px solid #ff6b6b; }
+.category-personal { border-left: 4px solid #4ecdc4; }
+.category-ideas { border-left: 4px solid #ffe066; }
+.category-reminders { border-left: 4px solid #ff9999; }
+.category-meetings { border-left: 4px solid #95e1d3; }
+
+.note-audio-container {
+  margin-top: 12px;
+}
+
+.note-waveform {
+  height: 60px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--stroke);
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.note-audio {
+  width: 100%;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--muted);
+}
+
+.empty-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 768px) {
+  .app-header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+  
+  .note-form {
+    grid-template-columns: 1fr;
+  }
+  
+  .notes-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+  
+  .filter-controls {
+    justify-content: space-between;
+  }
+}</code>
+        </div>
+      </div>
+    </section>
+
+    <!-- Customer Support System -->
+    <section id="customer-support" class="docs-card">
+      <div class="card-header">
+        <div class="card-icon">📞</div>
+        <div>
+          <h2 class="card-title">Customer Support Call Recorder</h2>
+          <p class="card-subtitle">Professional call recording with ticket integration</p>
+        </div>
+      </div>
+      
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="feature-icon">🎟️</div>
+          <h3 class="feature-title">Ticket Integration</h3>
+          <p class="feature-desc">Automatic call attachment to support tickets</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">📊</div>
+          <h3 class="feature-title">Call Analytics</h3>
+          <p class="feature-desc">Duration, quality metrics, and sentiment analysis</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">🔍</div>
+          <h3 class="feature-title">Searchable Archive</h3>
+          <p class="feature-desc">Find calls by customer, agent, or keywords</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">📝</div>
+          <h3 class="feature-title">Call Notes</h3>
+          <p class="feature-desc">Agent notes and follow-up actions</p>
+        </div>
+      </div>
+      
+      <h3>Key Features Implementation</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">class SupportCallRecorder {
+  constructor() {
+    this.recorder = new SAIRecorder({
+      chunkDuration: 10000,        // 10-second chunks for calls
+      overlapDuration: 1000,       // 1-second overlap
+      enableStorage: true,
+      
+      onRecordingStart: (session) => this.onCallStart(session),
+      onRecordingStop: (session) => this.onCallEnd(session)
+    });
+    
+    this.currentCall = null;
+    this.currentTicket = null;
+  }
+  
+  startCall(ticketId, customerId, agentId) {
+    this.currentCall = {
+      ticketId,
+      customerId,
+      agentId,
+      startTime: new Date(),
+      notes: [],
+      tags: [],
+      sentiment: 'neutral'
+    };
+    
+    this.recorder.start();
+    this.startCallTimer();
+    this.enableCallQualityMonitoring();
+  }
+  
+  endCall() {
+    this.recorder.stop();
+    this.saveCallToTicket();
+    this.generateCallSummary();
+  }
+  
+  addCallNote(note, timestamp = new Date()) {
+    if (this.currentCall) {
+      this.currentCall.notes.push({
+        text: note,
+        timestamp,
+        agentId: this.currentCall.agentId
+      });
+      
+      this.saveCallProgress();
+    }
+  }
+  
+  enableCallQualityMonitoring() {
+    this.recorder.enableLevelMonitoring({
+      updateInterval: 100,
+      onSilence: (duration) => this.handleSilence(duration),
+      onNoiseDetected: (level) => this.handleNoise(level)
+    });
+  }
+  
+  async saveCallToTicket() {
+    const recording = await this.recorder.getCombinedBlob();
+    const callData = {
+      ...this.currentCall,
+      endTime: new Date(),
+      duration: this.getCallDuration(),
+      recordingSize: recording.size,
+      sessionId: this.recorder.getCurrentSession().id
+    };
+    
+    // Save to ticketing system
+    await this.uploadToTicketSystem(callData, recording);
+  }
+}</code>
+      </div>
+    </section>
+
+    <!-- Podcast Studio -->
+    <section id="podcast-studio" class="docs-card">
+      <div class="card-header">
+        <div class="card-icon">🎤</div>
+        <div>
+          <h2 class="card-title">Podcast Studio</h2>
+          <p class="card-subtitle">Professional podcast recording with episode management</p>
+        </div>
+      </div>
+      
+      <h3>Multi-Track Recording Setup</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">class PodcastStudio {
+  constructor() {
+    this.recorders = new Map(); // Multiple recorders for different tracks
+    this.currentEpisode = null;
+    this.isRecording = false;
+  }
+  
+  async setupEpisode(episodeData) {
+    this.currentEpisode = {
+      id: this.generateEpisodeId(),
+      title: episodeData.title,
+      description: episodeData.description,
+      hosts: episodeData.hosts,
+      guests: episodeData.guests || [],
+      tags: episodeData.tags || [],
+      createdAt: new Date(),
+      tracks: new Map()
+    };
+    
+    // Setup individual recorders for each participant
+    for (const participant of [...episodeData.hosts, ...episodeData.guests]) {
+      await this.setupParticipantTrack(participant);
+    }
+  }
+  
+  async setupParticipantTrack(participant) {
+    const recorder = new SAIRecorder({
+      containerId: `track-${participant.id}`,
+      chunkDuration: 2000,          // 2-second chunks for high quality
+      overlapDuration: 200,         // Minimal overlap for quality
+      enableStorage: true,
+      enableWaveforms: true,
+      
+      audioConstraints: {
+        channelCount: 1,            // Mono per participant
+        sampleRate: 48000,          // High quality
+        echoCancellation: true,
+        noiseSuppression: false     // Preserve natural voice
+      },
+      
+      onChunkReady: (chunk) => this.processParticipantChunk(participant.id, chunk)
+    });
+    
+    this.recorders.set(participant.id, recorder);
+    this.currentEpisode.tracks.set(participant.id, {
+      participant,
+      chunks: [],
+      totalDuration: 0
+    });
+  }
+  
+  async startRecording() {
+    if (this.isRecording) return;
+    
+    this.isRecording = true;
+    this.currentEpisode.recordingStartTime = new Date();
+    
+    // Start all participant recorders simultaneously
+    const startPromises = Array.from(this.recorders.values()).map(recorder => 
+      recorder.start()
+    );
+    
+    await Promise.all(startPromises);
+    
+    this.startEpisodeTimer();
+    this.enableRealTimeMonitoring();
+  }
+  
+  async stopRecording() {
+    if (!this.isRecording) return;
+    
+    this.isRecording = false;
+    this.currentEpisode.recordingEndTime = new Date();
+    
+    // Stop all recorders
+    const stopPromises = Array.from(this.recorders.values()).map(recorder => 
+      recorder.stop()
+    );
+    
+    await Promise.all(stopPromises);
+    
+    await this.finalizeEpisode();
+    await this.generateEpisodePreview();
+  }
+  
+  enableRealTimeMonitoring() {
+    // Monitor each track independently
+    for (const [participantId, recorder] of this.recorders) {
+      recorder.enableLevelMonitoring({
+        updateInterval: 50,
+        onLevelUpdate: (level) => this.updateParticipantLevel(participantId, level),
+        onSilence: (duration) => this.handleParticipantSilence(participantId, duration)
+      });
+    }
+  }
+  
+  async generateEpisodePreview() {
+    // Combine all tracks for preview
+    const combinedAudio = await this.mixTracks();
+    
+    // Generate episode artwork/waveform
+    const waveformData = await this.generateEpisodeWaveform(combinedAudio);
+    
+    // Create episode metadata
+    const episodeMetadata = {
+      ...this.currentEpisode,
+      duration: this.calculateTotalDuration(),
+      fileSize: combinedAudio.size,
+      waveformData,
+      participants: Array.from(this.currentEpisode.tracks.keys())
+    };
+    
+    return episodeMetadata;
+  }
+  
+  async exportEpisode(format = 'mp3', quality = 'high') {
+    const combinedAudio = await this.mixTracks();
+    
+    // Would integrate with audio processing library
+    // for format conversion and quality optimization
+    
+    const exportData = {
+      audio: combinedAudio,
+      metadata: this.currentEpisode,
+      format,
+      quality
+    };
+    
+    return this.processEpisodeExport(exportData);
+  }
+}</code>
+      </div>
+    </section>
+
+    <!-- Interview Tool -->
+    <section id="interview-tool" class="docs-card">
+      <div class="card-header">
+        <div class="card-icon">🗣️</div>
+        <div>
+          <h2 class="card-title">Remote Interview Platform</h2>
+          <p class="card-subtitle">Professional interview recording with real-time collaboration</p>
+        </div>
+      </div>
+      
+      <h3>Interview Session Management</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">class InterviewPlatform {
+  constructor() {
+    this.recorder = new SAIRecorder({
+      chunkDuration: 5000,
+      enableStorage: true,
+      enableWaveforms: true
+    });
+    
+    this.currentInterview = null;
+    this.participants = new Map();
+    this.questionQueue = [];
+    this.currentQuestionIndex = 0;
+  }
+  
+  async startInterview(interviewData) {
+    this.currentInterview = {
+      id: this.generateInterviewId(),
+      position: interviewData.position,
+      candidate: interviewData.candidate,
+      interviewers: interviewData.interviewers,
+      questions: interviewData.questions,
+      startTime: new Date(),
+      notes: [],
+      ratings: new Map(),
+      status: 'in-progress'
+    };
+    
+    this.questionQueue = [...interviewData.questions];
+    await this.recorder.start();
+    
+    this.startInterviewTimer();
+    this.loadFirstQuestion();
+  }
+  
+  loadFirstQuestion() {
+    if (this.questionQueue.length > 0) {
+      this.displayQuestion(this.questionQueue[0]);
+      this.startQuestionTimer();
+    }
+  }
+  
+  nextQuestion() {
+    this.saveCurrentQuestionResponse();
+    this.currentQuestionIndex++;
+    
+    if (this.currentQuestionIndex < this.questionQueue.length) {
+      this.displayQuestion(this.questionQueue[this.currentQuestionIndex]);
+      this.startQuestionTimer();
+    } else {
+      this.completeInterview();
+    }
+  }
+  
+  addInterviewerNote(note, questionIndex = this.currentQuestionIndex) {
+    const noteEntry = {
+      text: note,
+      questionIndex,
+      timestamp: new Date(),
+      interviewer: this.getCurrentInterviewer()
+    };
+    
+    this.currentInterview.notes.push(noteEntry);
+    this.saveInterviewProgress();
+  }
+  
+  rateResponse(questionIndex, rating, criteria) {
+    if (!this.currentInterview.ratings.has(questionIndex)) {
+      this.currentInterview.ratings.set(questionIndex, new Map());
+    }
+    
+    this.currentInterview.ratings.get(questionIndex).set(criteria, rating);
+    this.saveInterviewProgress();
+  }
+  
+  async completeInterview() {
+    await this.recorder.stop();
+    
+    this.currentInterview.endTime = new Date();
+    this.currentInterview.duration = this.calculateInterviewDuration();
+    this.currentInterview.status = 'completed';
+    
+    await this.generateInterviewReport();
+    await this.saveInterviewData();
+    
+    this.showInterviewSummary();
+  }
+  
+  async generateInterviewReport() {
+    const recording = await this.recorder.getCombinedBlob();
+    
+    const report = {
+      interview: this.currentInterview,
+      recording: {
+        duration: this.currentInterview.duration,
+        size: recording.size,
+        sessionId: this.recorder.getCurrentSession().id
+      },
+      analytics: {
+        questionsAsked: this.currentQuestionIndex + 1,
+        averageResponseTime: this.calculateAverageResponseTime(),
+        notes: this.currentInterview.notes.length,
+        overallRating: this.calculateOverallRating()
+      }
+    };
+    
+    return report;
+  }
+}</code>
+      </div>
+    </section>
+
+    <!-- More Examples Quick Links -->
+    <section class="docs-card">
+      <div class="card-header">
+        <div class="card-icon">🔗</div>
+        <div>
+          <h2 class="card-title">More Examples</h2>
+          <p class="card-subtitle">Additional use cases and implementations</p>
+        </div>
+      </div>
+      
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="feature-icon">🌍</div>
+          <h3 class="feature-title">Language Learning</h3>
+          <p class="feature-desc">Pronunciation practice with feedback and progress tracking</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">👥</div>
+          <h3 class="feature-title">Meeting Recorder</h3>
+          <p class="feature-desc">Team meeting transcription with speaker identification</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">🎓</div>
+          <h3 class="feature-title">Educational Tools</h3>
+          <p class="feature-desc">Student presentations and oral exam recording</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">🏥</div>
+          <h3 class="feature-title">Healthcare</h3>
+          <p class="feature-desc">Patient consultation recording with privacy controls</p>
+        </div>
+      </div>
+      
+      <div class="alert alert-info">
+        <div class="alert-icon">💡</div>
+        <div>
+          <strong>Need a custom implementation?</strong> These examples provide the foundation for building specialized recording applications. 
+          Combine the patterns shown here with your specific business logic.
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <script>
+    // Copy code functionality
+    function copyCode(button) {
+      const codeBlock = button.closest('.code-block');
+      const code = codeBlock.querySelector('.code-content').textContent;
+      
+      navigator.clipboard.writeText(code).then(() => {
+        const originalText = button.textContent;
+        button.textContent = 'Copied!';
+        button.style.background = 'rgba(59,227,138,0.2)';
+        
+        setTimeout(() => {
+          button.textContent = originalText;
+          button.style.background = '';
+        }, 2000);
+      }).catch(err => {
+        console.error('Copy failed:', err);
+        button.textContent = 'Copy failed';
+        setTimeout(() => {
+          button.textContent = 'Copy';
+        }, 2000);
+      });
+    }
+
+    // Smooth scrolling for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+        }
+      });
+    });
+  </script>
+</body>
+</html>

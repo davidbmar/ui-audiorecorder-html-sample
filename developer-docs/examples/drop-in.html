@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Drop-in Integration - SAI Audio Recorder</title>
+  <link rel="stylesheet" href="../docs.css">
+</head>
+<body>
+  <div class="docs-shell">
+    
+    <!-- Header -->
+    <header class="docs-header">
+      <h1 class="docs-title">Drop-in Integration</h1>
+      <p class="docs-subtitle">
+        Add SAI Audio Recorder to your existing application with minimal changes
+      </p>
+    </header>
+
+    <!-- Back Navigation -->
+    <nav class="docs-nav">
+      <a href="../index.html" class="nav-item">
+        <div class="nav-icon">←</div>
+        <div class="nav-text">
+          <div class="nav-title">Back to Documentation</div>
+          <div class="nav-desc">Return to main docs</div>
+        </div>
+      </a>
+    </nav>
+
+    <!-- Integration Styles -->
+    <section class="docs-card">
+      <div class="card-header">
+        <div class="card-icon">🎯</div>
+        <div>
+          <h2 class="card-title">Integration Styles</h2>
+          <p class="card-subtitle">Choose the approach that fits your application</p>
+        </div>
+      </div>
+      
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="feature-icon">⚡</div>
+          <h3 class="feature-title">Minimal</h3>
+          <p class="feature-desc">Just the recorder, no extra UI</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">🎨</div>
+          <h3 class="feature-title">Styled</h3>
+          <p class="feature-desc">Full SAI theme integration</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">🔧</div>
+          <h3 class="feature-title">Custom</h3>
+          <p class="feature-desc">Match your existing design</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">📱</div>
+          <h3 class="feature-title">Modal</h3>
+          <p class="feature-desc">Pop-up recorder overlay</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Minimal Integration -->
+    <section class="docs-card">
+      <div class="card-header">
+        <div class="card-icon">⚡</div>
+        <div>
+          <h2 class="card-title">Minimal Integration</h2>
+          <p class="card-subtitle">Add to any page with just 3 lines of code</p>
+        </div>
+      </div>
+      
+      <p>Perfect for adding voice recording to forms, comments, or anywhere you need simple audio input.</p>
+      
+      <h3>Step 1: Add the files to your page</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">HTML</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">&lt;!-- Add to your existing &lt;head&gt; --&gt;
+&lt;link rel="stylesheet" href="path/to/sai.css"&gt;
+
+&lt;!-- Add before closing &lt;/body&gt; --&gt;
+&lt;script src="path/to/storage.js"&gt;&lt;/script&gt;
+&lt;script src="path/to/app.js"&gt;&lt;/script&gt;</code>
+      </div>
+      
+      <h3>Step 2: Add the recorder HTML</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">HTML</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">&lt;!-- Insert this anywhere in your page --&gt;
+&lt;div class="sai-recorder-minimal"&gt;
+  &lt;button id="btn-start" class="btn btn-accent"&gt;🎙 Record&lt;/button&gt;
+  &lt;button id="btn-stop" class="btn" disabled style="display:none;"&gt;⏹ Stop&lt;/button&gt;
+  &lt;div id="chunkList" class="sai-recordings"&gt;&lt;/div&gt;
+&lt;/div&gt;</code>
+      </div>
+      
+      <h3>Step 3: Add minimal styles (optional)</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">CSS</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">.sai-recorder-minimal {
+  padding: 16px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #f9f9f9;
+  margin: 16px 0;
+}
+
+.sai-recordings {
+  margin-top: 12px;
+}
+
+.sai-recordings .chunk {
+  padding: 8px;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  margin: 8px 0;
+  background: white;
+}</code>
+      </div>
+      
+      <div class="demo-area">
+        <div class="demo-header">
+          <div class="demo-title">Example: Contact Form with Voice Note</div>
+          <div class="demo-badge">Live Example</div>
+        </div>
+        
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">HTML</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <code class="code-content">&lt;form class="contact-form"&gt;
+  &lt;h3&gt;Contact Us&lt;/h3&gt;
+  
+  &lt;label&gt;Name:&lt;/label&gt;
+  &lt;input type="text" name="name" required&gt;
+  
+  &lt;label&gt;Email:&lt;/label&gt;
+  &lt;input type="email" name="email" required&gt;
+  
+  &lt;label&gt;Message:&lt;/label&gt;
+  &lt;textarea name="message" rows="4"&gt;&lt;/textarea&gt;
+  
+  &lt;label&gt;Voice Note (optional):&lt;/label&gt;
+  &lt;div class="sai-recorder-minimal"&gt;
+    &lt;button id="btn-start" class="btn btn-accent"&gt;🎙 Add Voice Note&lt;/button&gt;
+    &lt;button id="btn-stop" class="btn" disabled style="display:none;"&gt;⏹ Stop&lt;/button&gt;
+    &lt;div id="chunkList" class="sai-recordings"&gt;&lt;/div&gt;
+  &lt;/div&gt;
+  
+  &lt;button type="submit"&gt;Send Message&lt;/button&gt;
+&lt;/form&gt;</code>
+        </div>
+      </div>
+    </section>
+
+    <!-- Styled Integration -->
+    <section class="docs-card">
+      <div class="card-header">
+        <div class="card-icon">🎨</div>
+        <div>
+          <h2 class="card-title">Styled Integration</h2>
+          <p class="card-subtitle">Full SAI theme for beautiful recording interface</p>
+        </div>
+      </div>
+      
+      <p>Get the complete SAI look and feel while integrating with your existing layout.</p>
+      
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">HTML</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">&lt;!-- Full SAI Recorder Component --&gt;
+&lt;div class="sai-recorder-full"&gt;
+  &lt;div class="control-panel"&gt;
+    &lt;div class="row"&gt;
+      &lt;label style="display:flex;align-items:center;gap:8px;color:var(--muted);"&gt;
+        Quality:
+        &lt;select id="timeslice" style="background:rgba(255,255,255,0.08);border:1px solid var(--stroke);
+                                     border-radius:8px;padding:6px 10px;color:var(--text);"&gt;
+          &lt;option value="3000"&gt;High (3s)&lt;/option&gt;
+          &lt;option value="5000" selected&gt;Normal (5s)&lt;/option&gt;
+          &lt;option value="10000"&gt;Economy (10s)&lt;/option&gt;
+        &lt;/select&gt;
+      &lt;/label&gt;
+      &lt;div class="spacer"&gt;&lt;/div&gt;
+      &lt;div id="storage-status" style="color:var(--muted);font-size:12px;"&gt;
+        Storage: Ready
+      &lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class="row" style="margin-top:10px"&gt;
+      &lt;button id="btn-start" class="btn btn-accent"&gt;🎙 Start Recording&lt;/button&gt;
+      &lt;button id="btn-stop" class="btn" disabled&gt;⏹ Stop&lt;/button&gt;
+      &lt;button id="clearBtn" class="btn"&gt;🗑️ Clear&lt;/button&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;section id="recorder-card" class="recorder-card"&gt;
+    &lt;div class="recorder-header"&gt;
+      &lt;div&gt;
+        &lt;div class="title"&gt;Recording Status&lt;/div&gt;
+        &lt;div class="muted"&gt;Gap-free chunks with waveform visualization&lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/section&gt;
+
+  &lt;div class="chunks-panel"&gt;
+    &lt;h4 style="margin:0 0 16px 0;color:var(--text);"&gt;Recordings&lt;/h4&gt;
+    &lt;div id="chunkList" class="list"&gt;&lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</code>
+      </div>
+      
+      <div class="alert alert-info">
+        <div class="alert-icon">💡</div>
+        <div>
+          <strong>Pro tip:</strong> You can customize the SAI theme colors by overriding CSS variables to match your brand.
+        </div>
+      </div>
+    </section>
+
+    <!-- Custom Theme Integration -->
+    <section class="docs-card">
+      <div class="card-header">
+        <div class="card-icon">🔧</div>
+        <div>
+          <h2 class="card-title">Custom Theme Integration</h2>
+          <p class="card-subtitle">Match your existing design system</p>
+        </div>
+      </div>
+      
+      <p>Override SAI styles to match your application's design language.</p>
+      
+      <h3>Override CSS Variables</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">CSS</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">/* Override SAI theme to match your brand */
+.sai-recorder-custom {
+  --accent: #007bff;              /* Your primary color */
+  --text: #333333;                /* Your text color */
+  --muted: #666666;               /* Your muted text */
+  --glass: rgba(0,123,255,0.1);   /* Your glass effect */
+  --stroke: #dee2e6;              /* Your border color */
+  --radius-md: 4px;               /* Your border radius */
+}
+
+.sai-recorder-custom .btn {
+  font-family: inherit;           /* Use your font */
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sai-recorder-custom .control-panel {
+  background: white;
+  border: 1px solid #dee2e6;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}</code>
+      </div>
+      
+      <h3>Bootstrap Integration Example</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">HTML</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">&lt;div class="card"&gt;
+  &lt;div class="card-header"&gt;
+    &lt;h5 class="card-title"&gt;Voice Recorder&lt;/h5&gt;
+  &lt;/div&gt;
+  &lt;div class="card-body"&gt;
+    &lt;div class="sai-recorder-bootstrap"&gt;
+      &lt;div class="row mb-3"&gt;
+        &lt;div class="col-md-6"&gt;
+          &lt;label class="form-label"&gt;Recording Quality&lt;/label&gt;
+          &lt;select id="timeslice" class="form-select"&gt;
+            &lt;option value="3000"&gt;High Quality&lt;/option&gt;
+            &lt;option value="5000" selected&gt;Standard&lt;/option&gt;
+            &lt;option value="10000"&gt;Economy&lt;/option&gt;
+          &lt;/select&gt;
+        &lt;/div&gt;
+        &lt;div class="col-md-6 d-flex align-items-end"&gt;
+          &lt;small id="storage-status" class="text-muted"&gt;Storage: Ready&lt;/small&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+      
+      &lt;div class="btn-group mb-3" role="group"&gt;
+        &lt;button id="btn-start" class="btn btn-primary"&gt;
+          &lt;i class="fas fa-microphone"&gt;&lt;/i&gt; Record
+        &lt;/button&gt;
+        &lt;button id="btn-stop" class="btn btn-danger" disabled&gt;
+          &lt;i class="fas fa-stop"&gt;&lt;/i&gt; Stop
+        &lt;/button&gt;
+        &lt;button id="clearBtn" class="btn btn-outline-secondary"&gt;
+          &lt;i class="fas fa-trash"&gt;&lt;/i&gt; Clear
+        &lt;/button&gt;
+      &lt;/div&gt;
+      
+      &lt;div id="chunkList"&gt;&lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</code>
+      </div>
+    </section>
+
+    <!-- Modal Integration -->
+    <section class="docs-card">
+      <div class="card-header">
+        <div class="card-icon">📱</div>
+        <div>
+          <h2 class="card-title">Modal Integration</h2>
+          <p class="card-subtitle">Pop-up recorder that doesn't disrupt your layout</p>
+        </div>
+      </div>
+      
+      <p>Perfect for adding voice recording as an optional feature without taking up permanent space.</p>
+      
+      <h3>Trigger Button</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">HTML</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">&lt;!-- Add this trigger anywhere --&gt;
+&lt;button class="btn btn-accent" onclick="openRecorderModal()"&gt;
+  🎙 Record Voice Message
+&lt;/button&gt;</code>
+      </div>
+      
+      <h3>Modal HTML</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">HTML</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">&lt;!-- Add this modal to your page --&gt;
+&lt;div id="recorder-modal" class="sai-modal" style="display:none;"&gt;
+  &lt;div class="sai-modal-backdrop" onclick="closeRecorderModal()"&gt;&lt;/div&gt;
+  &lt;div class="sai-modal-content"&gt;
+    &lt;div class="sai-modal-header"&gt;
+      &lt;h3&gt;🎙 Voice Recorder&lt;/h3&gt;
+      &lt;button class="sai-modal-close" onclick="closeRecorderModal()"&gt;×&lt;/button&gt;
+    &lt;/div&gt;
+    
+    &lt;div class="sai-modal-body"&gt;
+      &lt;div class="control-panel"&gt;
+        &lt;div class="row"&gt;
+          &lt;button id="modal-btn-start" class="btn btn-accent"&gt;🎙 Start Recording&lt;/button&gt;
+          &lt;button id="modal-btn-stop" class="btn" disabled&gt;⏹ Stop&lt;/button&gt;
+          &lt;button id="modal-clearBtn" class="btn"&gt;🗑️ Clear&lt;/button&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+      
+      &lt;div class="chunks-panel"&gt;
+        &lt;div id="modal-chunkList" class="list"&gt;&lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+    
+    &lt;div class="sai-modal-footer"&gt;
+      &lt;button class="btn" onclick="closeRecorderModal()"&gt;Cancel&lt;/button&gt;
+      &lt;button class="btn btn-accent" onclick="saveRecordings()"&gt;Save Recordings&lt;/button&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</code>
+      </div>
+      
+      <h3>Modal Styles</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">CSS</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">.sai-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sai-modal-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
+}
+
+.sai-modal-content {
+  position: relative;
+  background: var(--glass-strong);
+  backdrop-filter: var(--blur);
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow);
+  width: min(90vw, 600px);
+  max-height: 80vh;
+  overflow: hidden;
+  animation: modalSlideIn 0.3s ease;
+}
+
+.sai-modal-header {
+  padding: 20px;
+  border-bottom: 1px solid var(--stroke);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sai-modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sai-modal-body {
+  padding: 20px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.sai-modal-footer {
+  padding: 16px 20px;
+  border-top: 1px solid var(--stroke);
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}</code>
+      </div>
+      
+      <h3>Modal JavaScript</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">function openRecorderModal() {
+  const modal = document.getElementById('recorder-modal');
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  
+  // Initialize recorder with modal elements
+  // (You'll need to modify app.js to use modal IDs)
+}
+
+function closeRecorderModal() {
+  const modal = document.getElementById('recorder-modal');
+  modal.style.display = 'none';
+  document.body.style.overflow = '';
+  
+  // Stop any active recording
+  if (window.stopRecording) {
+    window.stopRecording();
+  }
+}
+
+function saveRecordings() {
+  // Get recorded chunks and do something with them
+  const chunks = document.querySelectorAll('#modal-chunkList .chunk');
+  console.log('Saving', chunks.length, 'recordings');
+  
+  // Your save logic here
+  closeRecorderModal();
+}
+
+// Close modal on escape key
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closeRecorderModal();
+  }
+});</code>
+      </div>
+    </section>
+
+    <!-- Framework-Specific Examples -->
+    <section class="docs-card">
+      <div class="card-header">
+        <div class="card-icon">🛠️</div>
+        <div>
+          <h2 class="card-title">Framework Examples</h2>
+          <p class="card-subtitle">Integration with popular frameworks</p>
+        </div>
+      </div>
+      
+      <h3>React Integration</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">JSX</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">import { useEffect, useRef } from 'react';
+
+function AudioRecorder() {
+  const recorderRef = useRef(null);
+  
+  useEffect(() => {
+    // Load SAI recorder scripts
+    const loadScript = (src) => {
+      return new Promise((resolve) => {
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = resolve;
+        document.body.appendChild(script);
+      });
+    };
+    
+    Promise.all([
+      loadScript('/path/to/storage.js'),
+      loadScript('/path/to/app.js')
+    ]).then(() => {
+      console.log('SAI Recorder loaded');
+    });
+  }, []);
+  
+  return (
+    &lt;div ref={recorderRef} className="sai-recorder-react"&gt;
+      &lt;div className="control-panel"&gt;
+        &lt;button id="btn-start" className="btn btn-accent"&gt;
+          🎙 Record
+        &lt;/button&gt;
+        &lt;button id="btn-stop" className="btn" disabled&gt;
+          ⏹ Stop
+        &lt;/button&gt;
+      &lt;/div&gt;
+      &lt;div id="chunkList" className="recordings-list"&gt;&lt;/div&gt;
+    &lt;/div&gt;
+  );
+}</code>
+      </div>
+      
+      <h3>Vue.js Integration</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">Vue</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">&lt;template&gt;
+  &lt;div class="sai-recorder-vue"&gt;
+    &lt;div class="control-panel"&gt;
+      &lt;button id="btn-start" class="btn btn-accent" @click="startRecording"&gt;
+        🎙 Record
+      &lt;/button&gt;
+      &lt;button id="btn-stop" class="btn" :disabled="!recording" @click="stopRecording"&gt;
+        ⏹ Stop
+      &lt;/button&gt;
+    &lt;/div&gt;
+    &lt;div id="chunkList" class="recordings-list"&gt;&lt;/div&gt;
+  &lt;/div&gt;
+&lt;/template&gt;
+
+&lt;script&gt;
+export default {
+  name: 'AudioRecorder',
+  data() {
+    return {
+      recording: false
+    };
+  },
+  mounted() {
+    // Load SAI recorder
+    this.loadSAIRecorder();
+  },
+  methods: {
+    async loadSAIRecorder() {
+      // Load storage.js and app.js
+      await this.loadScript('/path/to/storage.js');
+      await this.loadScript('/path/to/app.js');
+    },
+    loadScript(src) {
+      return new Promise((resolve) => {
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = resolve;
+        document.body.appendChild(script);
+      });
+    },
+    startRecording() {
+      this.recording = true;
+      // Trigger SAI recorder start
+    },
+    stopRecording() {
+      this.recording = false;
+      // Trigger SAI recorder stop
+    }
+  }
+};
+&lt;/script&gt;</code>
+      </div>
+    </section>
+
+    <!-- Integration Checklist -->
+    <section class="docs-card">
+      <div class="card-header">
+        <div class="card-icon">✅</div>
+        <div>
+          <h2 class="card-title">Integration Checklist</h2>
+          <p class="card-subtitle">Make sure you've got everything set up correctly</p>
+        </div>
+      </div>
+      
+      <div class="alert alert-info">
+        <div class="alert-icon">📋</div>
+        <div>
+          Use this checklist to ensure your integration is working properly.
+        </div>
+      </div>
+      
+      <h3>Before Integration</h3>
+      <ul>
+        <li>✅ Downloaded sai.css, storage.js, and app.js files</li>
+        <li>✅ Verified files are accessible from your HTML page</li>
+        <li>✅ Tested on HTTPS or localhost (required for microphone access)</li>
+        <li>✅ Checked browser compatibility (modern browsers only)</li>
+      </ul>
+      
+      <h3>After Integration</h3>
+      <ul>
+        <li>✅ CSS styles are loading correctly</li>
+        <li>✅ JavaScript files load without errors (check console)</li>
+        <li>✅ Required HTML elements have correct IDs</li>
+        <li>✅ Microphone permission is granted when recording starts</li>
+        <li>✅ Audio chunks appear after recording</li>
+        <li>✅ Waveform visualizations render properly</li>
+        <li>✅ IndexedDB storage is working (check storage status)</li>
+      </ul>
+      
+      <h3>Testing Your Integration</h3>
+      <ol>
+        <li>Click the record button and grant microphone permission</li>
+        <li>Speak for a few seconds and click stop</li>
+        <li>Verify audio chunk appears with waveform</li>
+        <li>Click the waveform to test seeking</li>
+        <li>Refresh the page and check if recording persists</li>
+        <li>Test on mobile device for responsive behavior</li>
+      </ol>
+      
+      <div class="alert alert-success">
+        <div class="alert-icon">🎉</div>
+        <div>
+          <strong>All working?</strong> Congratulations! You've successfully integrated SAI Audio Recorder. 
+          Check out the <a href="../index.html#api-reference">API reference</a> for advanced customization options.
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <script>
+    // Copy code functionality
+    function copyCode(button) {
+      const codeBlock = button.closest('.code-block');
+      const code = codeBlock.querySelector('.code-content').textContent;
+      
+      navigator.clipboard.writeText(code).then(() => {
+        const originalText = button.textContent;
+        button.textContent = 'Copied!';
+        button.style.background = 'rgba(59,227,138,0.2)';
+        
+        setTimeout(() => {
+          button.textContent = originalText;
+          button.style.background = '';
+        }, 2000);
+      }).catch(err => {
+        console.error('Copy failed:', err);
+        button.textContent = 'Copy failed';
+        setTimeout(() => {
+          button.textContent = 'Copy';
+        }, 2000);
+      });
+    }
+  </script>
+</body>
+</html>

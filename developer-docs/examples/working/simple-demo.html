@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Simple SAI Recorder Demo</title>
+  <link rel="stylesheet" href="../../step4-indexdb/sai.css">
+  <style>
+    .demo-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .demo-header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    
+    .demo-title {
+      font-size: 2rem;
+      color: var(--text);
+      margin: 0 0 12px 0;
+    }
+    
+    .demo-description {
+      color: var(--muted);
+      font-size: 1.1rem;
+    }
+    
+    .status-section {
+      background: var(--glass);
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius-xl);
+      padding: 20px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    
+    .recording-status {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    
+    .recording-status.idle {
+      color: var(--muted);
+    }
+    
+    .recording-status.recording {
+      color: var(--danger);
+      animation: pulse 1s infinite;
+    }
+    
+    .recording-status.stopped {
+      color: var(--good);
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    .demo-controls {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    
+    .info-panel {
+      background: rgba(53,224,255,0.1);
+      border: 1px solid rgba(53,224,255,0.3);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin: 20px 0;
+    }
+    
+    .info-panel h3 {
+      color: var(--accent);
+      margin: 0 0 8px 0;
+      font-size: 1rem;
+    }
+    
+    .info-panel p {
+      color: var(--text);
+      margin: 0;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <div class="demo-container">
+      
+      <div class="demo-header">
+        <h1 class="demo-title">🎙️ SAI Recorder Demo</h1>
+        <p class="demo-description">
+          A simple demonstration of the SAI Audio Recorder with gap-free recording and IndexedDB storage.
+        </p>
+      </div>
+      
+      <div class="status-section">
+        <div id="recording-status" class="recording-status idle">Ready to Record</div>
+        <div id="elapsed" style="color: var(--muted); font-size: 0.9rem;">00:00</div>
+      </div>
+      
+      <div class="demo-controls">
+        <button id="btn-start" class="btn btn-accent">🎙 Start Recording</button>
+        <button id="btn-stop" class="btn" disabled>⏹ Stop Recording</button>
+        <button id="clearBtn" class="btn">🗑️ Clear All</button>
+      </div>
+      
+      <div class="info-panel">
+        <h3>💡 How it works</h3>
+        <p>
+          This demo uses the same recording technology as the step4-indexdb example. 
+          It records in overlapping chunks to eliminate gaps and saves everything to IndexedDB for persistence.
+        </p>
+      </div>
+      
+      <!-- Hidden elements for compatibility with existing app.js -->
+      <div id="timeslice" style="display: none;">
+        <input type="number" value="5000">
+      </div>
+      <div id="overlap" style="display: none;">
+        <input type="number" value="500">
+      </div>
+      <div id="storage-status" style="display: none;"></div>
+      <div id="mic-status" class="mic-dot" style="display: none;"></div>
+      <div id="recorder-card" class="recorder-card" style="display: none;"></div>
+      <div id="confirm" class="confirm" style="display: none;">
+        <div id="confirm-details"></div>
+        <button id="confirm-close"></button>
+      </div>
+      
+      <!-- Chunks Section -->
+      <div class="chunks-panel">
+        <h3 style="margin:0 0 16px 0;color:var(--text);">Recorded Chunks</h3>
+        <div id="chunkList" class="list"></div>
+      </div>
+
+      <!-- Log Section -->
+      <div class="log-panel">
+        <h3 style="margin:0 0 16px 0;color:var(--text);">Activity Log</h3>
+        <textarea id="log" class="log" readonly style="height: 120px;"></textarea>
+      </div>
+      
+    </div>
+  </div>
+
+  <script src="../../step4-indexdb/storage.js"></script>
+  <script src="../../step4-indexdb/app.js"></script>
+  <script>
+    // Custom demo functionality
+    class SimpleDemo {
+      constructor() {
+        this.setupCustomUI();
+      }
+      
+      setupCustomUI() {
+        // Update status when recording starts/stops
+        const startBtn = document.getElementById('btn-start');
+        const stopBtn = document.getElementById('btn-stop');
+        const statusEl = document.getElementById('recording-status');
+        
+        // Override the existing button event listeners
+        startBtn.addEventListener('click', () => {
+          statusEl.textContent = '🔴 Recording...';
+          statusEl.className = 'recording-status recording';
+        });
+        
+        stopBtn.addEventListener('click', () => {
+          statusEl.textContent = '✅ Recording Complete';
+          statusEl.className = 'recording-status stopped';
+          
+          // Reset to ready after 2 seconds
+          setTimeout(() => {
+            statusEl.textContent = 'Ready to Record';
+            statusEl.className = 'recording-status idle';
+          }, 2000);
+        });
+        
+        // Monitor the global running state
+        this.monitorRecordingState();
+      }
+      
+      monitorRecordingState() {
+        setInterval(() => {
+          const statusEl = document.getElementById('recording-status');
+          
+          // Check if we have access to the global running variable
+          if (typeof running !== 'undefined') {
+            if (running && !statusEl.classList.contains('recording')) {
+              statusEl.textContent = '🔴 Recording...';
+              statusEl.className = 'recording-status recording';
+            } else if (!running && statusEl.classList.contains('recording')) {
+              statusEl.textContent = '✅ Recording Complete';
+              statusEl.className = 'recording-status stopped';
+              
+              setTimeout(() => {
+                statusEl.textContent = 'Ready to Record';
+                statusEl.className = 'recording-status idle';
+              }, 2000);
+            }
+          }
+        }, 500);
+      }
+    }
+    
+    // Initialize the demo when the page loads
+    document.addEventListener('DOMContentLoaded', () => {
+      new SimpleDemo();
+      
+      // Add some helpful console messages
+      console.log('🎙️ SAI Recorder Demo loaded!');
+      console.log('Click "Start Recording" to begin. Grant microphone permission when prompted.');
+      console.log('The recorder will save chunks to IndexedDB automatically.');
+    });
+  </script>
+</body>
+</html>

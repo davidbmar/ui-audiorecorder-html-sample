@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SAI Audio Recorder - Developer Documentation</title>
+  <link rel="stylesheet" href="docs.css">
+</head>
+<body>
+  <div class="docs-shell">
+    
+    <!-- Header -->
+    <header class="docs-header">
+      <h1 class="docs-title">SAI Audio Recorder</h1>
+      <p class="docs-subtitle">
+        A beautiful, gap-free audio recording component with waveform visualization and IndexedDB storage. 
+        Drop it into any project and start recording in seconds.
+      </p>
+    </header>
+
+    <!-- Quick Navigation -->
+    <nav class="docs-nav">
+      <div class="nav-grid">
+        <a href="examples/quick-start.html" class="nav-item">
+          <div class="nav-icon">🚀</div>
+          <div class="nav-text">
+            <div class="nav-title">Quick Start</div>
+            <div class="nav-desc">Get recording in 30 seconds</div>
+          </div>
+        </a>
+        
+        <a href="examples/drop-in.html" class="nav-item">
+          <div class="nav-icon">📦</div>
+          <div class="nav-text">
+            <div class="nav-title">Drop-in Integration</div>
+            <div class="nav-desc">Copy, paste, done</div>
+          </div>
+        </a>
+        
+        <a href="examples/web-component.html" class="nav-item">
+          <div class="nav-icon">🧩</div>
+          <div class="nav-text">
+            <div class="nav-title">Web Component</div>
+            <div class="nav-desc">Custom HTML element</div>
+          </div>
+        </a>
+        
+        <a href="examples/javascript-api.html" class="nav-item">
+          <div class="nav-icon">⚡</div>
+          <div class="nav-text">
+            <div class="nav-title">JavaScript API</div>
+            <div class="nav-desc">Programmatic control</div>
+          </div>
+        </a>
+        
+        <a href="examples/real-world.html" class="nav-item">
+          <div class="nav-icon">💡</div>
+          <div class="nav-text">
+            <div class="nav-title">Real Examples</div>
+            <div class="nav-desc">Working demos you can try now!</div>
+          </div>
+        </a>
+        
+        <a href="#api-reference" class="nav-item">
+          <div class="nav-icon">📚</div>
+          <div class="nav-text">
+            <div class="nav-title">API Reference</div>
+            <div class="nav-desc">Complete documentation</div>
+          </div>
+        </a>
+      </div>
+    </nav>
+
+    <!-- Key Features -->
+    <section class="docs-card">
+      <div class="card-header">
+        <div class="card-icon">✨</div>
+        <div>
+          <h2 class="card-title">Why SAI Audio Recorder?</h2>
+          <p class="card-subtitle">Professional audio recording made simple</p>
+        </div>
+      </div>
+      
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="feature-icon">🎵</div>
+          <h3 class="feature-title">Gap-Free Recording</h3>
+          <p class="feature-desc">Overlapping chunk strategy eliminates audio gaps that plague other solutions</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">📊</div>
+          <h3 class="feature-title">Beautiful Waveforms</h3>
+          <p class="feature-desc">Real-time visualization with click-to-seek playback controls</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">💾</div>
+          <h3 class="feature-title">Persistent Storage</h3>
+          <p class="feature-desc">IndexedDB integration keeps recordings safe across browser sessions</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">🎨</div>
+          <h3 class="feature-title">SAI Theme Design</h3>
+          <p class="feature-desc">Glass morphism UI that looks stunning in any application</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">⚙️</div>
+          <h3 class="feature-title">Highly Configurable</h3>
+          <p class="feature-desc">Chunk size, overlap, MIME types, storage options - all customizable</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">📱</div>
+          <h3 class="feature-title">Cross-Platform</h3>
+          <p class="feature-desc">Works on desktop, mobile, and tablet with responsive design</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Quick Start -->
+    <section id="quick-start" class="docs-card">
+      <div class="card-header">
+        <div class="card-icon">🚀</div>
+        <div>
+          <h2 class="card-title">Quick Start</h2>
+          <p class="card-subtitle">Add professional audio recording to your app in 30 seconds</p>
+        </div>
+      </div>
+      
+      <div class="alert alert-info">
+        <div class="alert-icon">💡</div>
+        <div>
+          <strong>No dependencies!</strong> Everything you need is included. Just copy the files and you're ready to go.
+        </div>
+      </div>
+      
+      <h3>Step 1: Copy the files</h3>
+      <p>Download and include these three files in your project:</p>
+      
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">File Structure</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">your-project/
+├── sai.css         # SAI theme styles
+├── storage.js      # IndexedDB storage manager
+└── app.js          # Core recording functionality</code>
+      </div>
+      
+      <h3>Step 2: Add to your HTML</h3>
+      <p>Include the files and add the recorder HTML:</p>
+      
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">HTML</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+  &lt;meta charset="utf-8"&gt;
+  &lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;
+  &lt;link rel="stylesheet" href="sai.css"&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;div class="app-shell"&gt;
+    &lt;h1&gt;My Audio Recorder&lt;/h1&gt;
+    
+    &lt;!-- Control Panel --&gt;
+    &lt;div class="control-panel"&gt;
+      &lt;div class="row"&gt;
+        &lt;button id="btn-start" class="btn btn-accent"&gt;🎙 Start Recording&lt;/button&gt;
+        &lt;button id="btn-stop" class="btn" disabled&gt;⏹ Stop&lt;/button&gt;
+        &lt;button id="clearBtn" class="btn"&gt;🗑️ Clear&lt;/button&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+    
+    &lt;!-- Recorded Chunks --&gt;
+    &lt;div class="chunks-panel"&gt;
+      &lt;h3&gt;Recorded Chunks&lt;/h3&gt;
+      &lt;div id="chunkList" class="list"&gt;&lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+  
+  &lt;script src="storage.js"&gt;&lt;/script&gt;
+  &lt;script src="app.js"&gt;&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code>
+      </div>
+      
+      <h3>Step 3: That's it!</h3>
+      <p>Open your HTML file in a browser and start recording. The recorder will:</p>
+      <ul>
+        <li>Request microphone permission</li>
+        <li>Record in gap-free chunks with configurable overlap</li>
+        <li>Display beautiful waveforms for each chunk</li>
+        <li>Save everything to IndexedDB for persistence</li>
+        <li>Handle browser refreshes gracefully</li>
+      </ul>
+      
+      <div class="alert alert-success">
+        <div class="alert-icon">✅</div>
+        <div>
+          <strong>Pro tip:</strong> The recorder automatically loads previous recordings when you refresh the page. No data loss!
+        </div>
+      </div>
+    </section>
+
+    <!-- Drop-in Integration -->
+    <section id="drop-in" class="docs-card">
+      <div class="card-header">
+        <div class="card-icon">📦</div>
+        <div>
+          <h2 class="card-title">Drop-in Integration</h2>
+          <p class="card-subtitle">Copy-paste components for instant integration</p>
+        </div>
+      </div>
+      
+      <p>Already have an app? Drop these pre-built components anywhere in your existing HTML:</p>
+      
+      <h3>Minimal Recorder</h3>
+      <p>Just the essentials - perfect for forms or simple recording needs:</p>
+      
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">HTML</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">&lt;!-- Minimal SAI Audio Recorder --&gt;
+&lt;div class="sai-recorder-minimal"&gt;
+  &lt;button id="record-btn" class="btn btn-accent"&gt;🎙 Record&lt;/button&gt;
+  &lt;div id="recording-list"&gt;&lt;/div&gt;
+&lt;/div&gt;
+
+&lt;script src="storage.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+// Initialize minimal recorder
+const recorder = new SAIRecorder({
+  startBtn: '#record-btn',
+  container: '#recording-list',
+  chunkDuration: 5000,
+  enableStorage: true
+});
+&lt;/script&gt;</code>
+      </div>
+      
+      <h3>Full-Featured Recorder</h3>
+      <p>Complete recorder with all controls and visualizations:</p>
+      
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">HTML</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">&lt;!-- Full SAI Audio Recorder --&gt;
+&lt;div class="sai-recorder-full"&gt;
+  &lt;div class="recorder-controls"&gt;
+    &lt;label&gt;Chunk length (ms): &lt;input id="chunk-size" type="number" value="5000"&gt;&lt;/label&gt;
+    &lt;label&gt;Overlap (ms): &lt;input id="overlap-size" type="number" value="500"&gt;&lt;/label&gt;
+  &lt;/div&gt;
+  
+  &lt;div class="recorder-actions"&gt;
+    &lt;button id="start-btn" class="btn btn-accent"&gt;🎙 Start&lt;/button&gt;
+    &lt;button id="stop-btn" class="btn" disabled&gt;⏹ Stop&lt;/button&gt;
+    &lt;button id="clear-btn" class="btn"&gt;🗑️ Clear&lt;/button&gt;
+  &lt;/div&gt;
+  
+  &lt;div id="chunk-container"&gt;&lt;/div&gt;
+&lt;/div&gt;</code>
+      </div>
+      
+      <div class="demo-area">
+        <div class="demo-header">
+          <div class="demo-title">Live Demo</div>
+          <div class="demo-badge">Interactive</div>
+        </div>
+        <p class="text-muted">Click the buttons below to see the recorder in action:</p>
+        
+        <!-- Mini demo would go here -->
+        <div style="text-align: center; padding: 20px; border: 1px dashed var(--stroke); border-radius: 8px;">
+          <button class="btn btn-accent" onclick="alert('Demo recorder would start here!')">🎙 Try Demo</button>
+          <p class="text-muted mt-2">Full demo available in examples section</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Configuration -->
+    <section class="docs-card">
+      <div class="card-header">
+        <div class="card-icon">⚙️</div>
+        <div>
+          <h2 class="card-title">Configuration Options</h2>
+          <p class="card-subtitle">Customize the recorder to fit your needs</p>
+        </div>
+      </div>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>Option</th>
+            <th>Default</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>chunkDuration</code></td>
+            <td><code>5000</code></td>
+            <td>Length of each recording chunk in milliseconds</td>
+          </tr>
+          <tr>
+            <td><code>overlapDuration</code></td>
+            <td><code>500</code></td>
+            <td>Overlap between chunks to eliminate gaps</td>
+          </tr>
+          <tr>
+            <td><code>mimeType</code></td>
+            <td><code>'auto'</code></td>
+            <td>Audio format: 'audio/webm', 'audio/ogg', or 'auto'</td>
+          </tr>
+          <tr>
+            <td><code>enableStorage</code></td>
+            <td><code>true</code></td>
+            <td>Enable IndexedDB storage for persistence</td>
+          </tr>
+          <tr>
+            <td><code>enableWaveforms</code></td>
+            <td><code>true</code></td>
+            <td>Show waveform visualizations</td>
+          </tr>
+          <tr>
+            <td><code>theme</code></td>
+            <td><code>'sai'</code></td>
+            <td>Visual theme: 'sai', 'minimal', or 'custom'</td>
+          </tr>
+        </tbody>
+      </table>
+      
+      <h3>Example Configuration</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <code class="code-content">const recorder = new SAIRecorder({
+  chunkDuration: 3000,      // 3-second chunks
+  overlapDuration: 300,     // 300ms overlap
+  mimeType: 'audio/webm',   // Force WebM format
+  enableStorage: true,      // Save to IndexedDB
+  enableWaveforms: true,    // Show visualizations
+  theme: 'sai',            // Use SAI theme
+  
+  // Custom callbacks
+  onRecordingStart: () => console.log('Recording started'),
+  onChunkReady: (chunk) => console.log('New chunk:', chunk),
+  onRecordingComplete: (session) => console.log('Session complete:', session)
+});</code>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="docs-card text-center">
+      <p class="text-muted">
+        Built with ❤️ for developers who need reliable audio recording.<br>
+        <a href="examples/real-world.html">See examples</a> • <a href="#api-reference">API docs</a> • <a href="mailto:support@example.com">Get help</a>
+      </p>
+    </footer>
+
+  </div>
+
+  <script>
+    // Copy code functionality
+    function copyCode(button) {
+      const codeBlock = button.closest('.code-block');
+      const code = codeBlock.querySelector('.code-content').textContent;
+      
+      navigator.clipboard.writeText(code).then(() => {
+        const originalText = button.textContent;
+        button.textContent = 'Copied!';
+        button.style.background = 'rgba(59,227,138,0.2)';
+        
+        setTimeout(() => {
+          button.textContent = originalText;
+          button.style.background = '';
+        }, 2000);
+      }).catch(err => {
+        console.error('Copy failed:', err);
+        button.textContent = 'Copy failed';
+        setTimeout(() => {
+          button.textContent = 'Copy';
+        }, 2000);
+      });
+    }
+
+    // Smooth scrolling for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+        }
+      });
+    });
+  </script>
+</body>
+</html>

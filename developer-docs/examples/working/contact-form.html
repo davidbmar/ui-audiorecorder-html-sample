@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Contact Form with Voice Message</title>
+  <link rel="stylesheet" href="../../step4-indexdb/sai.css">
+  <style>
+    .form-container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .contact-form {
+      background: var(--glass);
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius-xl);
+      padding: 30px;
+      backdrop-filter: var(--blur);
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-group label {
+      display: block;
+      color: var(--text);
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--stroke);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+    }
+    
+    .form-group input:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(53,224,255,0.2);
+    }
+    
+    .form-group textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+    
+    .voice-section {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      margin: 20px 0;
+    }
+    
+    .voice-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    
+    .voice-title {
+      color: var(--text);
+      font-weight: 600;
+      margin: 0;
+    }
+    
+    .voice-description {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 16px;
+    }
+    
+    .voice-controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    
+    .voice-status {
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+    
+    .voice-status.idle {
+      background: rgba(155,166,178,0.2);
+      color: var(--muted);
+    }
+    
+    .voice-status.recording {
+      background: rgba(255,107,107,0.2);
+      color: var(--danger);
+      animation: pulse 1s infinite;
+    }
+    
+    .voice-status.recorded {
+      background: rgba(59,227,138,0.2);
+      color: var(--good);
+    }
+    
+    .submit-section {
+      margin-top: 30px;
+      text-align: center;
+    }
+    
+    .submit-btn {
+      background: linear-gradient(180deg, rgba(53,224,255,.18), rgba(53,224,255,.12));
+      border: 1px solid rgba(53,224,255,.35);
+      color: #b8f4ff;
+      padding: 12px 30px;
+      border-radius: 999px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    
+    .submit-btn:hover {
+      background: linear-gradient(180deg, rgba(53,224,255,.25), rgba(53,224,255,.18));
+      transform: translateY(-1px);
+    }
+    
+    .submit-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    
+    /* Hidden elements for compatibility */
+    .hidden-for-compat {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <div class="form-container">
+      
+      <form class="contact-form" id="contactForm">
+        <h1 style="color: var(--text); text-align: center; margin: 0 0 30px 0;">
+          📞 Contact Us
+        </h1>
+        
+        <div class="form-group">
+          <label for="name">Full Name *</label>
+          <input type="text" id="name" name="name" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="email">Email Address *</label>
+          <input type="email" id="email" name="email" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="subject">Subject</label>
+          <input type="text" id="subject" name="subject" placeholder="How can we help you?">
+        </div>
+        
+        <div class="form-group">
+          <label for="message">Message</label>
+          <textarea id="message" name="message" placeholder="Tell us more about your inquiry..."></textarea>
+        </div>
+        
+        <div class="voice-section">
+          <div class="voice-header">
+            <span style="font-size: 1.2rem;">🎙️</span>
+            <h3 class="voice-title">Voice Message (Optional)</h3>
+          </div>
+          
+          <p class="voice-description">
+            Record a voice message to help us better understand your needs. 
+            This can be especially helpful for complex technical issues.
+          </p>
+          
+          <div class="voice-controls">
+            <button type="button" id="btn-start" class="btn btn-accent">🎙 Record Voice Message</button>
+            <button type="button" id="btn-stop" class="btn" disabled>⏹ Stop Recording</button>
+            <button type="button" id="clearBtn" class="btn">🗑️ Clear</button>
+          </div>
+          
+          <div id="voice-status" class="voice-status idle">Ready to record</div>
+          
+          <div id="chunkList" class="list" style="margin-top: 16px;"></div>
+        </div>
+        
+        <div class="submit-section">
+          <button type="submit" class="submit-btn">
+            📤 Send Message
+          </button>
+          <p style="color: var(--muted); font-size: 0.85rem; margin-top: 12px;">
+            We'll get back to you within 24 hours
+          </p>
+        </div>
+      </form>
+      
+    </div>
+    
+    <!-- Hidden elements required by app.js -->
+    <div class="hidden-for-compat">
+      <input id="timeslice" type="number" value="5000">
+      <input id="overlap" type="number" value="500">
+      <div id="storage-status"></div>
+      <div id="mic-status" class="mic-dot"></div>
+      <div id="recorder-card" class="recorder-card"></div>
+      <div id="confirm" class="confirm">
+        <div id="confirm-details"></div>
+        <button id="confirm-close"></button>
+      </div>
+      <div id="elapsed">00:00</div>
+      <textarea id="log" class="log"></textarea>
+    </div>
+  </div>
+
+  <script src="../../step4-indexdb/storage.js"></script>
+  <script src="../../step4-indexdb/app.js"></script>
+  <script>
+    class ContactFormWithVoice {
+      constructor() {
+        this.hasVoiceMessage = false;
+        this.setupFormHandling();
+        this.setupVoiceStatus();
+      }
+      
+      setupFormHandling() {
+        const form = document.getElementById('contactForm');
+        form.addEventListener('submit', (e) => this.handleFormSubmit(e));
+      }
+      
+      setupVoiceStatus() {
+        const statusEl = document.getElementById('voice-status');
+        const startBtn = document.getElementById('btn-start');
+        const stopBtn = document.getElementById('btn-stop');
+        const clearBtn = document.getElementById('clearBtn');
+        
+        // Monitor recording state
+        startBtn.addEventListener('click', () => {
+          statusEl.textContent = '🔴 Recording voice message...';
+          statusEl.className = 'voice-status recording';
+        });
+        
+        stopBtn.addEventListener('click', () => {
+          statusEl.textContent = '✅ Voice message recorded';
+          statusEl.className = 'voice-status recorded';
+          this.hasVoiceMessage = true;
+        });
+        
+        clearBtn.addEventListener('click', () => {
+          statusEl.textContent = 'Ready to record';
+          statusEl.className = 'voice-status idle';
+          this.hasVoiceMessage = false;
+        });
+        
+        // Monitor the global recording state
+        this.monitorRecordingState();
+      }
+      
+      monitorRecordingState() {
+        setInterval(() => {
+          const statusEl = document.getElementById('voice-status');
+          
+          if (typeof running !== 'undefined') {
+            if (running && !statusEl.classList.contains('recording')) {
+              statusEl.textContent = '🔴 Recording voice message...';
+              statusEl.className = 'voice-status recording';
+            } else if (!running && statusEl.classList.contains('recording')) {
+              statusEl.textContent = '✅ Voice message recorded';
+              statusEl.className = 'voice-status recorded';
+              this.hasVoiceMessage = true;
+            }
+          }
+        }, 500);
+      }
+      
+      handleFormSubmit(e) {
+        e.preventDefault();
+        
+        // Get form data
+        const formData = new FormData(e.target);
+        const data = {
+          name: formData.get('name'),
+          email: formData.get('email'),
+          subject: formData.get('subject'),
+          message: formData.get('message'),
+          hasVoiceMessage: this.hasVoiceMessage,
+          submittedAt: new Date().toISOString()
+        };
+        
+        // Validate required fields
+        if (!data.name || !data.email) {
+          alert('Please fill in all required fields.');
+          return;
+        }
+        
+        // In a real application, you would send this to your server
+        console.log('Contact form submitted:', data);
+        
+        if (this.hasVoiceMessage) {
+          console.log('Voice message will be processed and attached to the support ticket.');
+        }
+        
+        // Show success message
+        this.showSuccessMessage();
+      }
+      
+      showSuccessMessage() {
+        const form = document.querySelector('.contact-form');
+        form.innerHTML = `
+          <div style="text-align: center; padding: 40px 20px;">
+            <div style="font-size: 3rem; margin-bottom: 20px;">✅</div>
+            <h2 style="color: var(--good); margin: 0 0 16px 0;">Message Sent Successfully!</h2>
+            <p style="color: var(--text); margin: 0 0 20px 0;">
+              Thank you for contacting us. We've received your message${this.hasVoiceMessage ? ' and voice recording' : ''}.
+            </p>
+            <p style="color: var(--muted); font-size: 0.9rem; margin: 0;">
+              We'll get back to you within 24 hours.
+            </p>
+            <button onclick="location.reload()" class="btn btn-accent" style="margin-top: 20px;">
+              Send Another Message
+            </button>
+          </div>
+        `;
+      }
+    }
+    
+    // Initialize when the page loads
+    document.addEventListener('DOMContentLoaded', () => {
+      new ContactFormWithVoice();
+      
+      console.log('📞 Contact form with voice message loaded!');
+      console.log('Users can now add voice messages to their contact form submissions.');
+    });
+  </script>
+</body>
+</html>

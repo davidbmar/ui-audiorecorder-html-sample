@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>🎤 Podcast Studio</title>
+  <link rel="stylesheet" href="../../step4-indexdb/sai.css">
+  <style>
+    .studio-container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .studio-header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    
+    .studio-title {
+      font-size: 2.5rem;
+      color: var(--text);
+      margin: 0 0 12px 0;
+      background: linear-gradient(135deg, var(--text), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .episode-setup {
+      background: var(--glass);
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius-xl);
+      padding: 30px;
+      margin-bottom: 30px;
+    }
+    
+    .episode-form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .form-group.full-width {
+      grid-column: 1 / -1;
+    }
+    
+    .form-group label {
+      color: var(--text);
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      padding: 12px;
+      border: 1px solid var(--stroke);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+      font-family: inherit;
+    }
+    
+    .recording-controls {
+      background: var(--glass);
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius-xl);
+      padding: 30px;
+      margin-bottom: 30px;
+    }
+    
+    .controls-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .recording-status {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .status-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--muted);
+      transition: all 0.3s ease;
+    }
+    
+    .status-indicator.recording {
+      background: var(--danger);
+      box-shadow: 0 0 12px var(--danger);
+      animation: pulse 1s infinite;
+    }
+    
+    .status-indicator.ready {
+      background: var(--good);
+    }
+    
+    .quality-settings {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    
+    .setting-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    
+    .setting-group input,
+    .setting-group select {
+      padding: 6px 10px;
+      border: 1px solid var(--stroke);
+      border-radius: 6px;
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+      width: 100px;
+    }
+    
+    .main-controls {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    
+    .episode-info {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-top: 20px;
+    }
+    
+    .episode-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 16px;
+    }
+    
+    .stat-item {
+      text-align: center;
+    }
+    
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+    
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .export-section {
+      background: var(--glass);
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius-xl);
+      padding: 30px;
+      margin-top: 30px;
+    }
+    
+    .export-options {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    
+    .export-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    
+    .export-card:hover {
+      background: rgba(255,255,255,0.08);
+      transform: translateY(-2px);
+    }
+    
+    .export-icon {
+      font-size: 2rem;
+      margin-bottom: 12px;
+    }
+    
+    .export-title {
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+    
+    .export-desc {
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    
+    @media (max-width: 768px) {
+      .episode-form {
+        grid-template-columns: 1fr;
+      }
+      
+      .quality-settings {
+        grid-template-columns: 1fr;
+      }
+      
+      .main-controls {
+        flex-direction: column;
+        align-items: center;
+      }
+      
+      .controls-header {
+        flex-direction: column;
+        gap: 16px;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <div class="studio-container">
+      
+      <div class="studio-header">
+        <h1 class="studio-title">🎤 Podcast Studio</h1>
+        <p style="color: var(--muted); font-size: 1.1rem; margin: 0;">
+          Professional podcast recording with high-quality audio and episode management
+        </p>
+      </div>
+      
+      <div class="episode-setup">
+        <h2 style="color: var(--text); margin: 0 0 20px 0;">📋 Episode Setup</h2>
+        
+        <div class="episode-form">
+          <div class="form-group">
+            <label for="episode-title">Episode Title</label>
+            <input type="text" id="episode-title" placeholder="Episode #1: Introduction" value="Episode #1: Introduction">
+          </div>
+          
+          <div class="form-group">
+            <label for="episode-number">Episode Number</label>
+            <input type="number" id="episode-number" value="1" min="1">
+          </div>
+          
+          <div class="form-group full-width">
+            <label for="episode-description">Episode Description</label>
+            <textarea id="episode-description" rows="3" placeholder="Brief description of this episode...">Welcome to our podcast! In this first episode, we introduce ourselves and discuss what you can expect from future episodes.</textarea>
+          </div>
+          
+          <div class="form-group">
+            <label for="host-name">Host Name</label>
+            <input type="text" id="host-name" placeholder="Your name" value="Host Name">
+          </div>
+          
+          <div class="form-group">
+            <label for="guest-name">Guest Name (Optional)</label>
+            <input type="text" id="guest-name" placeholder="Guest name">
+          </div>
+        </div>
+      </div>
+      
+      <div class="recording-controls">
+        <div class="controls-header">
+          <h2 style="color: var(--text); margin: 0;">🎙️ Recording Controls</h2>
+          <div class="recording-status">
+            <div id="status-indicator" class="status-indicator ready"></div>
+            <span id="status-text" style="color: var(--text); font-weight: 600;">Ready to Record</span>
+            <span id="elapsed" style="color: var(--muted); margin-left: 12px;">00:00</span>
+          </div>
+        </div>
+        
+        <div class="quality-settings">
+          <div class="setting-group">
+            <label>Quality:</label>
+            <select id="timeslice">
+              <option value="2000">High (2s chunks)</option>
+              <option value="3000" selected>Normal (3s chunks)</option>
+              <option value="5000">Standard (5s chunks)</option>
+            </select>
+          </div>
+          
+          <div class="setting-group">
+            <label>Overlap:</label>
+            <input type="number" id="overlap" value="300" min="100" max="1000" step="100">
+            <span>ms</span>
+          </div>
+          
+          <div class="setting-group">
+            <label>Format:</label>
+            <select id="format-select">
+              <option value="webm">WebM (Recommended)</option>
+              <option value="ogg">Ogg Vorbis</option>
+              <option value="mp4">MP4 (if supported)</option>
+            </select>
+          </div>
+          
+          <div class="setting-group">
+            <label>Auto-save:</label>
+            <select id="autosave">
+              <option value="enabled" selected>Enabled</option>
+              <option value="disabled">Disabled</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="main-controls">
+          <button id="btn-start" class="btn btn-accent" style="font-size: 1.1rem; padding: 14px 28px;">
+            🎙 Start Recording
+          </button>
+          <button id="btn-stop" class="btn" disabled style="font-size: 1.1rem; padding: 14px 28px;">
+            ⏹ Stop Recording
+          </button>
+          <button id="clearBtn" class="btn" style="font-size: 1.1rem; padding: 14px 28px;">
+            🗑️ Clear All
+          </button>
+        </div>
+        
+        <div class="episode-info" id="episode-info" style="display: none;">
+          <div class="episode-stats">
+            <div class="stat-item">
+              <div class="stat-value" id="chunks-count">0</div>
+              <div class="stat-label">Chunks Recorded</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value" id="total-size">0 MB</div>
+              <div class="stat-label">Total Size</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value" id="duration">0:00</div>
+              <div class="stat-label">Duration</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value" id="quality-score">Good</div>
+              <div class="stat-label">Quality</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Hidden elements for compatibility -->
+      <div style="display: none;">
+        <div id="storage-status"></div>
+        <div id="mic-status" class="mic-dot"></div>
+        <div id="recorder-card" class="recorder-card"></div>
+        <div id="confirm" class="confirm">
+          <div id="confirm-details"></div>
+          <button id="confirm-close"></button>
+        </div>
+      </div>
+      
+      <!-- Recording chunks -->
+      <div class="chunks-panel">
+        <h3 style="margin:0 0 16px 0;color:var(--text);">🎵 Recording Segments</h3>
+        <div id="chunkList" class="list"></div>
+      </div>
+      
+      <!-- Export section -->
+      <div class="export-section" id="export-section" style="display: none;">
+        <h2 style="color: var(--text); margin: 0 0 20px 0;">📤 Export & Publish</h2>
+        
+        <div class="export-options">
+          <div class="export-card" onclick="exportEpisode('download')">
+            <div class="export-icon">💾</div>
+            <div class="export-title">Download Audio</div>
+            <div class="export-desc">Save the combined recording to your device</div>
+          </div>
+          
+          <div class="export-card" onclick="exportEpisode('metadata')">
+            <div class="export-icon">📋</div>
+            <div class="export-title">Export Metadata</div>
+            <div class="export-desc">Save episode information and timestamps</div>
+          </div>
+          
+          <div class="export-card" onclick="exportEpisode('rss')">
+            <div class="export-icon">📡</div>
+            <div class="export-title">Generate RSS</div>
+            <div class="export-desc">Create RSS feed entry for podcast platforms</div>
+          </div>
+          
+          <div class="export-card" onclick="showPublishOptions()">
+            <div class="export-icon">🚀</div>
+            <div class="export-title">Publish Episode</div>
+            <div class="export-desc">Upload to hosting platforms</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Activity log -->
+      <div class="log-panel">
+        <h3 style="margin:0 0 16px 0;color:var(--text);">📝 Session Log</h3>
+        <textarea id="log" class="log" readonly style="height: 120px;"></textarea>
+      </div>
+      
+    </div>
+  </div>
+
+  <script src="../../step4-indexdb/storage.js"></script>
+  <script src="../../step4-indexdb/app.js"></script>
+  <script>
+    class PodcastStudio {
+      constructor() {
+        this.episodeData = {
+          startTime: null,
+          endTime: null,
+          chunks: [],
+          totalSize: 0,
+          metadata: {}
+        };
+        
+        this.setupStudioInterface();
+        this.loadEpisodeData();
+      }
+      
+      setupStudioInterface() {
+        // Recording state monitoring
+        this.monitorRecordingState();
+        
+        // Episode form handling
+        this.setupEpisodeForm();
+        
+        // Custom button behaviors
+        this.setupCustomControls();
+      }
+      
+      setupEpisodeForm() {
+        const inputs = ['episode-title', 'episode-number', 'episode-description', 'host-name', 'guest-name'];
+        
+        inputs.forEach(id => {
+          const element = document.getElementById(id);
+          if (element) {
+            element.addEventListener('change', () => this.saveEpisodeData());
+          }
+        });
+      }
+      
+      setupCustomControls() {
+        const startBtn = document.getElementById('btn-start');
+        const stopBtn = document.getElementById('btn-stop');
+        const clearBtn = document.getElementById('clearBtn');
+        
+        startBtn.addEventListener('click', () => {
+          this.episodeData.startTime = new Date();
+          this.updateRecordingStatus('recording');
+          this.showEpisodeInfo();
+        });
+        
+        stopBtn.addEventListener('click', () => {
+          this.episodeData.endTime = new Date();
+          this.updateRecordingStatus('completed');
+          this.showExportSection();
+          this.updateEpisodeStats();
+        });
+        
+        clearBtn.addEventListener('click', () => {
+          this.resetEpisode();
+          this.updateRecordingStatus('ready');
+        });
+      }
+      
+      monitorRecordingState() {
+        setInterval(() => {
+          if (typeof running !== 'undefined') {
+            if (running) {
+              this.updateRecordingStatus('recording');
+              this.updateEpisodeStats();
+            }
+          }
+          
+          // Update chunk count
+          if (typeof chunkIndex !== 'undefined') {
+            document.getElementById('chunks-count').textContent = chunkIndex;
+          }
+        }, 1000);
+      }
+      
+      updateRecordingStatus(status) {
+        const indicator = document.getElementById('status-indicator');
+        const statusText = document.getElementById('status-text');
+        
+        switch (status) {
+          case 'ready':
+            indicator.className = 'status-indicator ready';
+            statusText.textContent = 'Ready to Record';
+            break;
+          case 'recording':
+            indicator.className = 'status-indicator recording';
+            statusText.textContent = 'Recording in Progress';
+            break;
+          case 'completed':
+            indicator.className = 'status-indicator ready';
+            statusText.textContent = 'Recording Complete';
+            break;
+        }
+      }
+      
+      showEpisodeInfo() {
+        document.getElementById('episode-info').style.display = 'block';
+      }
+      
+      showExportSection() {
+        document.getElementById('export-section').style.display = 'block';
+        document.getElementById('export-section').scrollIntoView({ behavior: 'smooth' });
+      }
+      
+      updateEpisodeStats() {
+        // Duration
+        if (this.episodeData.startTime) {
+          const duration = this.episodeData.endTime ? 
+            (this.episodeData.endTime - this.episodeData.startTime) / 1000 :
+            (new Date() - this.episodeData.startTime) / 1000;
+          
+          const minutes = Math.floor(duration / 60);
+          const seconds = Math.floor(duration % 60);
+          document.getElementById('duration').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        // Estimate size (rough calculation)
+        const estimatedSize = (chunkIndex || 0) * 0.5; // Rough estimate: 0.5MB per chunk
+        document.getElementById('total-size').textContent = `${estimatedSize.toFixed(1)} MB`;
+        
+        // Quality assessment
+        const chunkCount = chunkIndex || 0;
+        let quality = 'Good';
+        if (chunkCount > 50) quality = 'Excellent';
+        else if (chunkCount < 10) quality = 'Fair';
+        document.getElementById('quality-score').textContent = quality;
+      }
+      
+      saveEpisodeData() {
+        this.episodeData.metadata = {
+          title: document.getElementById('episode-title').value,
+          number: document.getElementById('episode-number').value,
+          description: document.getElementById('episode-description').value,
+          host: document.getElementById('host-name').value,
+          guest: document.getElementById('guest-name').value,
+          updatedAt: new Date().toISOString()
+        };
+        
+        localStorage.setItem('podcast-episode-data', JSON.stringify(this.episodeData));
+      }
+      
+      loadEpisodeData() {
+        try {
+          const saved = localStorage.getItem('podcast-episode-data');
+          if (saved) {
+            const data = JSON.parse(saved);
+            this.episodeData = { ...this.episodeData, ...data };
+            
+            // Restore form values
+            if (data.metadata) {
+              Object.keys(data.metadata).forEach(key => {
+                const element = document.getElementById(`episode-${key}`);
+                if (element && data.metadata[key]) {
+                  element.value = data.metadata[key];
+                }
+              });
+            }
+          }
+        } catch (error) {
+          console.warn('Failed to load episode data:', error);
+        }
+      }
+      
+      resetEpisode() {
+        this.episodeData = {
+          startTime: null,
+          endTime: null,
+          chunks: [],
+          totalSize: 0,
+          metadata: {}
+        };
+        
+        document.getElementById('episode-info').style.display = 'none';
+        document.getElementById('export-section').style.display = 'none';
+        
+        // Reset stats
+        document.getElementById('chunks-count').textContent = '0';
+        document.getElementById('total-size').textContent = '0 MB';
+        document.getElementById('duration').textContent = '0:00';
+        document.getElementById('quality-score').textContent = 'Good';
+      }
+    }
+    
+    // Export functions
+    function exportEpisode(type) {
+      const studio = window.podcastStudio;
+      
+      switch (type) {
+        case 'download':
+          // In a real implementation, this would combine all audio chunks
+          alert('🎵 Download functionality would export the combined audio file here.\n\nIn this demo, the audio chunks are stored in IndexedDB and would be combined for download.');
+          break;
+          
+        case 'metadata':
+          const metadata = {
+            episode: studio.episodeData.metadata,
+            recording: {
+              startTime: studio.episodeData.startTime,
+              endTime: studio.episodeData.endTime,
+              chunkCount: chunkIndex || 0,
+              estimatedSize: ((chunkIndex || 0) * 0.5).toFixed(1) + ' MB'
+            },
+            exportDate: new Date().toISOString()
+          };
+          
+          const blob = new Blob([JSON.stringify(metadata, null, 2)], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `episode-${metadata.episode.number || 1}-metadata.json`;
+          a.click();
+          URL.revokeObjectURL(url);
+          break;
+          
+        case 'rss':
+          alert('📡 RSS generation would create a podcast feed entry here.\n\nThis would include episode metadata, publication date, and audio file URLs.');
+          break;
+      }
+    }
+    
+    function showPublishOptions() {
+      alert('🚀 Publishing options would integrate with:\n\n• Anchor.fm\n• Spotify for Podcasters\n• Apple Podcasts Connect\n• Google Podcasts Manager\n• Custom hosting platforms\n\nUpload your audio and metadata directly from the studio!');
+    }
+    
+    // Initialize the podcast studio
+    document.addEventListener('DOMContentLoaded', () => {
+      window.podcastStudio = new PodcastStudio();
+      
+      console.log('🎤 Podcast Studio loaded!');
+      console.log('Professional podcast recording with episode management and export features.');
+    });
+  </script>
+</body>
+</html>

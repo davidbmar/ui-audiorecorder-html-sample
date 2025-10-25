@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Basic Audio Recorder - Actually Works!</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f0f2f5;
+    }
+    
+    .recorder-container {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+    }
+    
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+    }
+    
+    .status {
+      font-size: 18px;
+      font-weight: bold;
+      margin: 20px 0;
+      padding: 15px;
+      border-radius: 8px;
+    }
+    
+    .status.ready {
+      background: #e8f5e8;
+      color: #2d5a2d;
+    }
+    
+    .status.recording {
+      background: #ffe8e8;
+      color: #a00;
+      animation: pulse 1s infinite;
+    }
+    
+    .status.stopped {
+      background: #e8f0ff;
+      color: #003d7a;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    
+    .controls {
+      margin: 30px 0;
+    }
+    
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin: 0 10px;
+      transition: background 0.2s;
+    }
+    
+    button:hover:not(:disabled) {
+      background: #0056b3;
+    }
+    
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    
+    .recording-red {
+      background: #dc3545;
+    }
+    
+    .recording-red:hover:not(:disabled) {
+      background: #c82333;
+    }
+    
+    .recordings {
+      margin-top: 30px;
+      text-align: left;
+    }
+    
+    .recording-item {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 6px;
+      padding: 15px;
+      margin: 10px 0;
+    }
+    
+    .recording-meta {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 10px;
+    }
+    
+    audio {
+      width: 100%;
+    }
+    
+    .error {
+      background: #ffe6e6;
+      color: #a00;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 15px 0;
+    }
+    
+    .instructions {
+      background: #f0f8ff;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 20px 0;
+      color: #003d7a;
+      text-align: left;
+    }
+    
+    .instructions h3 {
+      margin-top: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="recorder-container">
+    <h1>🎙️ Basic Audio Recorder</h1>
+    <p class="subtitle">Simple, working audio recording demo</p>
+    
+    <div class="instructions">
+      <h3>📋 How to use:</h3>
+      <ol>
+        <li>Click "Start Recording" below</li>
+        <li>Allow microphone access when prompted</li>
+        <li>Speak into your microphone</li>
+        <li>Click "Stop Recording" when done</li>
+        <li>Play back your recording!</li>
+      </ol>
+    </div>
+    
+    <div id="status" class="status ready">
+      Ready to record
+    </div>
+    
+    <div class="controls">
+      <button id="startBtn">🎙 Start Recording</button>
+      <button id="stopBtn" disabled class="recording-red">⏹ Stop Recording</button>
+      <button id="clearBtn" disabled>🗑 Clear All</button>
+    </div>
+    
+    <div id="error-message"></div>
+    
+    <div class="recordings">
+      <h3>📼 Your Recordings:</h3>
+      <div id="recordings-list">
+        <p style="color: #666; font-style: italic;">No recordings yet. Click "Start Recording" to begin!</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    class BasicRecorder {
+      constructor() {
+        this.mediaRecorder = null;
+        this.audioChunks = [];
+        this.isRecording = false;
+        this.recordingCount = 0;
+        
+        this.setupEventListeners();
+        this.checkSupport();
+      }
+      
+      setupEventListeners() {
+        document.getElementById('startBtn').addEventListener('click', () => this.startRecording());
+        document.getElementById('stopBtn').addEventListener('click', () => this.stopRecording());
+        document.getElementById('clearBtn').addEventListener('click', () => this.clearRecordings());
+      }
+      
+      checkSupport() {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          this.showError('❌ Your browser doesn\'t support audio recording. Please use Chrome, Firefox, or Safari.');
+          return;
+        }
+        
+        if (!window.MediaRecorder) {
+          this.showError('❌ MediaRecorder not supported in your browser.');
+          return;
+        }
+        
+        console.log('✅ Browser supports audio recording');
+      }
+      
+      async startRecording() {
+        try {
+          console.log('🎤 Requesting microphone access...');
+          this.clearError();
+          
+          const stream = await navigator.mediaDevices.getUserMedia({ 
+            audio: true 
+          });
+          
+          // Check which MIME types are supported
+          let mimeType = '';
+          const types = ['audio/webm', 'audio/ogg', 'audio/mp4', 'audio/wav'];
+          for (const type of types) {
+            if (MediaRecorder.isTypeSupported(type)) {
+              mimeType = type;
+              break;
+            }
+          }
+          
+          console.log('📱 Using MIME type:', mimeType || 'browser default');
+          
+          this.mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
+          this.audioChunks = [];
+          
+          this.mediaRecorder.ondataavailable = (event) => {
+            console.log('📊 Data available, size:', event.data.size);
+            this.audioChunks.push(event.data);
+          };
+          
+          this.mediaRecorder.onstop = () => {
+            console.log('⏹ Recording stopped, processing...');
+            this.processRecording();
+          };
+          
+          this.mediaRecorder.onerror = (event) => {
+            console.error('❌ MediaRecorder error:', event.error);
+            this.showError('Recording error: ' + event.error);
+          };
+          
+          this.mediaRecorder.start();
+          this.isRecording = true;
+          this.updateUI();
+          
+          console.log('✅ Recording started successfully');
+          
+        } catch (error) {
+          console.error('❌ Failed to start recording:', error);
+          if (error.name === 'NotAllowedError') {
+            this.showError('❌ Microphone access denied. Please reload and allow microphone access.');
+          } else if (error.name === 'NotFoundError') {
+            this.showError('❌ No microphone found. Please check your audio devices.');
+          } else {
+            this.showError('❌ Failed to start recording: ' + error.message);
+          }
+        }
+      }
+      
+      stopRecording() {
+        if (this.mediaRecorder && this.isRecording) {
+          console.log('🛑 Stopping recording...');
+          this.mediaRecorder.stop();
+          
+          // Stop all tracks
+          this.mediaRecorder.stream.getTracks().forEach(track => {
+            track.stop();
+          });
+          
+          this.isRecording = false;
+          this.updateUI();
+        }
+      }
+      
+      processRecording() {
+        if (this.audioChunks.length === 0) {
+          this.showError('❌ No audio data recorded. Please try again.');
+          return;
+        }
+        
+        console.log('🔄 Processing', this.audioChunks.length, 'audio chunks...');
+        
+        const audioBlob = new Blob(this.audioChunks, { 
+          type: this.mediaRecorder.mimeType || 'audio/webm' 
+        });
+        
+        console.log('✅ Created audio blob, size:', audioBlob.size, 'bytes');
+        
+        this.recordingCount++;
+        this.addRecordingToUI(audioBlob);
+        
+        this.updateStatus('stopped', `✅ Recording complete! (${(audioBlob.size / 1024).toFixed(1)} KB)`);
+      }
+      
+      addRecordingToUI(blob) {
+        const recordingsList = document.getElementById('recordings-list');
+        
+        // Remove "no recordings" message
+        if (this.recordingCount === 1) {
+          recordingsList.innerHTML = '';
+        }
+        
+        const recordingDiv = document.createElement('div');
+        recordingDiv.className = 'recording-item';
+        
+        const meta = document.createElement('div');
+        meta.className = 'recording-meta';
+        meta.innerHTML = `
+          <strong>Recording #${this.recordingCount}</strong> • 
+          ${(blob.size / 1024).toFixed(1)} KB • 
+          ${new Date().toLocaleTimeString()} • 
+          ${blob.type}
+        `;
+        
+        const audio = document.createElement('audio');
+        audio.controls = true;
+        audio.src = URL.createObjectURL(blob);
+        audio.preload = 'metadata';
+        
+        recordingDiv.appendChild(meta);
+        recordingDiv.appendChild(audio);
+        recordingsList.appendChild(recordingDiv);
+        
+        // Enable clear button
+        document.getElementById('clearBtn').disabled = false;
+        
+        console.log('✅ Added recording #' + this.recordingCount + ' to UI');
+      }
+      
+      clearRecordings() {
+        // Clean up object URLs to prevent memory leaks
+        document.querySelectorAll('audio').forEach(audio => {
+          URL.revokeObjectURL(audio.src);
+        });
+        
+        document.getElementById('recordings-list').innerHTML = 
+          '<p style="color: #666; font-style: italic;">No recordings yet. Click "Start Recording" to begin!</p>';
+        
+        this.recordingCount = 0;
+        document.getElementById('clearBtn').disabled = true;
+        this.updateStatus('ready', 'Ready to record');
+        
+        console.log('🗑 All recordings cleared');
+      }
+      
+      updateUI() {
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        
+        startBtn.disabled = this.isRecording;
+        stopBtn.disabled = !this.isRecording;
+        
+        if (this.isRecording) {
+          this.updateStatus('recording', '🔴 Recording... Click "Stop" when finished');
+        }
+      }
+      
+      updateStatus(type, message) {
+        const status = document.getElementById('status');
+        status.className = `status ${type}`;
+        status.textContent = message;
+      }
+      
+      showError(message) {
+        const errorDiv = document.getElementById('error-message');
+        errorDiv.innerHTML = `<div class="error">${message}</div>`;
+        console.error(message);
+      }
+      
+      clearError() {
+        document.getElementById('error-message').innerHTML = '';
+      }
+    }
+    
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('🚀 Initializing Basic Recorder...');
+      window.recorder = new BasicRecorder();
+    });
+    
+    // Also log some helpful info
+    console.log('🔍 Browser info:');
+    console.log('- User Agent:', navigator.userAgent);
+    console.log('- MediaDevices supported:', !!navigator.mediaDevices);
+    console.log('- getUserMedia supported:', !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia));
+    console.log('- MediaRecorder supported:', !!window.MediaRecorder);
+    
+    if (window.MediaRecorder) {
+      console.log('- Supported MIME types:');
+      ['audio/webm', 'audio/ogg', 'audio/mp4', 'audio/wav'].forEach(type => {
+        console.log(`  - ${type}:`, MediaRecorder.isTypeSupported(type));
+      });
+    }
+  </script>
+</body>
+</html>
